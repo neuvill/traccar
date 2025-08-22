@@ -138,6 +138,32 @@ public class Device extends GroupedModel implements Disableable, Schedulable {
 
     private boolean disabled;
 
+
+//adding new columns
+
+
+    private String motionStatus;
+
+    public String getMotionStatus() {
+        return motionStatus;
+    }
+
+    public void setMotionStatus(String motionStatus) {
+        this.motionStatus = motionStatus;
+    }
+
+    private Date motionStatusChanged;
+
+    public Date getMotionStatusChanged() {
+        return motionStatusChanged;
+    }
+
+    public void setMotionStatusChanged(Date motionStatusChanged) {
+        this.motionStatusChanged = motionStatusChanged;
+    }
+
+//columns added
+
     @Override
     public boolean getDisabled() {
         return disabled;
