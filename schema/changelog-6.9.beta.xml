@@ -4,14 +4,14 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
-        logicalFilePath="changelog-6.9.0">
+        logicalFilePath="changelog-6.9.beta">
 
-  <changeSet author="author" id="changelog-6.9.0">
+  <changeSet author="author" id="changelog-6.9.beta">
 
     <addColumn tableName="tc_devices">
      
-      <column name="motionstatus" type="VARCHAR(255)" />
-      <column name="motionstatuschanged" type="TIMESTAMP" />
+      <column name="motion_status" type="VARCHAR(255)" />
+      <column name="motion_status_changed" type="TIMESTAMP" />
     </addColumn>
 
   </changeSet>

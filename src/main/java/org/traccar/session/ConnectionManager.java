@@ -309,6 +309,43 @@ public class ConnectionManager implements BroadcastInterface {
         if (local) {
             broadcastService.updatePosition(true, position);
         }
+        // updating MotionStatus
+
+ try {
+        Device device = storage.getObject(Device.class, new Request(
+                new Columns.All(), new Condition.Equals("id", position.getDeviceId())));
+
+        if (device != null) {
+            String newMotionStatus;
+
+            boolean ignition = position.getAttributes().get("ignition") != null
+                    && Boolean.parseBoolean(position.getAttributes().get("ignition").toString());
+            double speed = position.getSpeed();
+
+            if (ignition && speed > 0) {
+                newMotionStatus = "moving";
+            } else if (ignition && speed == 0) {
+                newMotionStatus = "idling";
+            } else {
+                newMotionStatus = "parked";
+            }
+
+            if (!newMotionStatus.equals(device.getMotionStatus())) {
+                device.setMotionStatus(newMotionStatus);
+                device.setMotionStatusChanged(new Date());
+
+                storage.updateObject(device, new Request(
+                        new Columns.Include("motionStatus", "motionStatusChanged"),
+                        new Condition.Equals("id", device.getId())));
+            }
+
+            // Notify listeners with updated device
+            updateDevice(true, device);
+        }
+    } catch (StorageException e) {
+        LOGGER.warn("Failed to update device motion status", e);
+    }
+
         for (long userId : deviceUsers.getOrDefault(position.getDeviceId(), Collections.emptySet())) {
             if (listeners.containsKey(userId)) {
                 for (UpdateListener listener : listeners.get(userId)) {
