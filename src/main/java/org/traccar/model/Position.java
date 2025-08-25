@@ -318,6 +318,31 @@ public class Position extends Message {
         return geofenceIds;
     }
 
+//adding new columns
+
+
+    private String motionStatus;
+
+    public String getMotionStatus() {
+        return motionStatus;
+    }
+
+    public void setMotionStatus(String motionStatus) {
+        this.motionStatus = motionStatus;
+    }
+
+    private Date motionStatusChanged;
+
+    public Date getMotionStatusChanged() {
+        return motionStatusChanged;
+    }
+
+    public void setMotionStatusChanged(Date motionStatusChanged) {
+        this.motionStatusChanged = motionStatusChanged;
+    }
+
+//columns added
+
     public void setGeofenceIds(List<? extends Number> geofenceIds) {
         if (geofenceIds != null) {
             this.geofenceIds = geofenceIds.stream().map(Number::longValue).toList();
