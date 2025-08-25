@@ -319,8 +319,10 @@ public class ConnectionManager implements BroadcastInterface {
         boolean ignition = position.getAttributes().get("ignition") != null
                 && Boolean.parseBoolean(position.getAttributes().get("ignition").toString());
         double speed = position.getSpeed();
+        boolean motion = position.getAttributes().get("motion") != null
+                && Boolean.parseBoolean(position.getAttributes().get("motion").toString());
 
-        if (ignition && speed > 0) {
+        if ((ignition && speed > 0) || motion) {
             newMotionStatus = "moving";
         } else if (ignition && speed == 0) {
             newMotionStatus = "idling";
