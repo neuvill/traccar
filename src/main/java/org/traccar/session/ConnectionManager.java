@@ -330,7 +330,7 @@ public class ConnectionManager implements BroadcastInterface {
             newMotionStatus = "parked";
         }
 
-        // set the motion info into the Position
+         // update device state only if motion status changes
         if (!newMotionStatus.equals(device.getMotionStatus())) {
             device.setMotionStatus(newMotionStatus);
             device.setMotionStatusChanged(position.getFixTime());
@@ -339,12 +339,16 @@ public class ConnectionManager implements BroadcastInterface {
                 new Columns.Include("motionStatus", "motionStatusChanged"),
                 new Condition.Equals("id", device.getId())));
         }
-        position.setMotionStatus(device.getMotionStatus());
+        /*position.setMotionStatus(device.getMotionStatus());
         position.setMotionStatusChanged(device.getMotionStatusChanged());
 
         storage.updateObject(position, new Request(
                 new Columns.Include("motionStatus", "motionStatusChanged"),
-                new Condition.Equals("id", position.getId())));
+                new Condition.Equals("id", position.getId())));*/
+
+        // store values into Position attributes (NOT as table columns)
+        position.getAttributes().put("motionStatus", device.getMotionStatus());
+        position.getAttributes().put("motionStatusChanged", device.getMotionStatusChanged());
 
     } catch (StorageException e) {
         LOGGER.warn("Failed to update position motion status", e);
