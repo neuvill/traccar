@@ -41,6 +41,7 @@ import org.traccar.handler.OutdatedHandler;
 import org.traccar.handler.PositionForwardingHandler;
 import org.traccar.handler.PostProcessHandler;
 import org.traccar.handler.SpeedLimitHandler;
+import org.traccar.handler.MotionStatusHandler;
 import org.traccar.handler.TimeHandler;
 import org.traccar.handler.events.AlarmEventHandler;
 import org.traccar.handler.events.BaseEventHandler;
@@ -95,6 +96,7 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
         bufferingManager = new BufferingManager(config, this);
 
         positionHandlers = Stream.of(
+                MotionStatusHandler.class,
                 ComputedAttributesHandler.Early.class,
                 OutdatedHandler.class,
                 TimeHandler.class,

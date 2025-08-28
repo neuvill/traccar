@@ -311,7 +311,7 @@ public class ConnectionManager implements BroadcastInterface {
         }
         // updating MotionStatus
 
-    try {
+    /*try {
         Device device = storage.getObject(Device.class, new Request(
                 new Columns.All(), new Condition.Equals("id", position.getDeviceId())));
         String newMotionStatus;
@@ -346,13 +346,13 @@ public class ConnectionManager implements BroadcastInterface {
                 new Columns.Include("motionStatus", "motionStatusChanged"),
                 new Condition.Equals("id", position.getId())));*/
 
-        // store values into Position attributes (NOT as table columns)
-        position.getAttributes().put("motionStatus", device.getMotionStatus());
-        position.getAttributes().put("motionStatusChanged", device.getMotionStatusChanged());
+        /*store values into Position attributes (NOT as table columns)
+        position.getAttributes().put("motionStat", device.getMotionStatus());
+        position.getAttributes().put("motionDate", device.getMotionStatusChanged());
 
     } catch (StorageException e) {
         LOGGER.warn("Failed to update position motion status", e);
-    }
+    }*/
 
         for (long userId : deviceUsers.getOrDefault(position.getDeviceId(), Collections.emptySet())) {
             if (listeners.containsKey(userId)) {

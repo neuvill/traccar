@@ -319,7 +319,7 @@ public class Position extends Message {
     }
 
 //adding new columns
-
+/*
 
     private String motionStatus;
 
@@ -340,7 +340,7 @@ public class Position extends Message {
     public void setMotionStatusChanged(Date motionStatusChanged) {
         this.motionStatusChanged = motionStatusChanged;
     }
-
+*/
 //columns added
 
     public void setGeofenceIds(List<? extends Number> geofenceIds) {
