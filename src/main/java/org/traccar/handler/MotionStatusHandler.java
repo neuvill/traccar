@@ -34,7 +34,7 @@ public class MotionStatusHandler extends BasePositionHandler {
             //double speed = position.getSpeed();
 
             String newStatus;
-            if ((motion) {
+            if (motion) {
                 newStatus = "moving";
             } else if (ignition) {
                 newStatus = "idling";
