@@ -138,7 +138,7 @@ public class Device extends GroupedModel implements Disableable, Schedulable {
 
     private boolean disabled;
 
-
+/*
 //adding new columns
 
 
@@ -163,7 +163,7 @@ public class Device extends GroupedModel implements Disableable, Schedulable {
     }
 
 //columns added
-
+*/
     @Override
     public boolean getDisabled() {
         return disabled;
