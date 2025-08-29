@@ -23,9 +23,20 @@ public class MotionStatusHandler extends BasePositionHandler {
         try {
             Position lastPosition = cacheManager.getPosition(position.getDeviceId());
             String lastStatus = lastPosition != null ? (String) lastPosition.getAttributes().get("motionStatus") : null;
-            String lastStatusChanged = lastPosition != null
+            /*String lastStatusChanged = lastPosition != null
             ? (String) lastPosition.getAttributes().get("motionStatusChanged")
-            : null;
+            : null;*/
+            Object value = lastPosition.getAttributes().get("motionStatusChanged");
+            Date lastStatusChanged = null;
+            if (value instanceof Date) {
+                lastStatusChanged = (Date) value;
+            } else if (value instanceof String) {
+                try {
+                    lastStatusChanged = javax.xml.bind.DatatypeConverter.parseDateTime((String) value).getTime();
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to convert motionStatusChanged", e);
+                }
+            }
             boolean ignition = Boolean.TRUE.equals(position.getAttributes().get("ignition"));
             boolean motion = Boolean.TRUE.equals(position.getAttributes().get("motion"));
             //double speed = position.getSpeed();
