@@ -23,8 +23,8 @@ public class MotionStatusHandler extends BasePositionHandler {
         try {
             Position lastPosition = cacheManager.getPosition(position.getDeviceId());
             String lastStatus = lastPosition != null ? (String) lastPosition.getAttributes().get("motionStatus") : null;
-            Date lastStatusChanged = lastPosition != null
-            ? (Date) lastPosition.getAttributes().get("motionStatusChanged")
+            String lastStatusChanged = lastPosition != null
+            ? (String) lastPosition.getAttributes().get("motionStatusChanged")
             : null;
             boolean ignition = Boolean.TRUE.equals(position.getAttributes().get("ignition"));
             boolean motion = Boolean.TRUE.equals(position.getAttributes().get("motion"));
