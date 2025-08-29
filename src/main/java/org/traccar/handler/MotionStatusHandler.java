@@ -3,15 +3,8 @@ package org.traccar.handler;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.traccar.model.Device;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
-import org.traccar.storage.Storage;
-import org.traccar.storage.StorageException;
-import org.traccar.storage.query.Columns;
-import org.traccar.storage.query.Condition;
-import org.traccar.storage.query.Request;
-
 import java.util.Date;
 
 public class MotionStatusHandler extends BasePositionHandler {
@@ -28,12 +21,11 @@ public class MotionStatusHandler extends BasePositionHandler {
     @Override
     public void onPosition(Position position, Callback callback) {
         try {
-            Device device = cacheManager.getObject(Device.class, position.getDeviceId());
-            if (device == null) {
-                callback.processed(false);
-                return;
-            }
-
+            Position lastPosition = cacheManager.getPosition(position.getDeviceId());
+            String lastStatus = lastPosition != null ? (String) lastPosition.getAttributes().get("motionStatus") : null;
+            Date lastStatusChanged = lastPosition != null
+            ? (Date) lastPosition.getAttributes().get("motionStatusChanged")
+            : null;
             boolean ignition = Boolean.TRUE.equals(position.getAttributes().get("ignition"));
             boolean motion = Boolean.TRUE.equals(position.getAttributes().get("motion"));
             //double speed = position.getSpeed();
@@ -47,18 +39,16 @@ public class MotionStatusHandler extends BasePositionHandler {
                 newStatus = "parked";
             }
 
-            if (!newStatus.equals(device.getMotionStatus())) {
-                device.setMotionStatus(newStatus);
-                device.setMotionStatusChanged(position.getFixTime() != null ? position.getFixTime() : new Date());
-
-                storage.updateObject(device, new Request(
-                new Columns.Include("motionStatus", "motionStatusChanged"),
-                new Condition.Equals("id", device.getId())));
+            if (lastStatus == null || !newStatus.equals(lastStatus)) {
+            // update new status
+                position.getAttributes().put("motionStatus", newStatus);
+                position.getAttributes().put("motionStatusChanged", position.getFixTime() != null
+                ? position.getFixTime() : new Date());
+            } else {
+            // preserve old values
+                position.getAttributes().put("motionStatus", lastStatus);
+                position.getAttributes().put("motionStatusChanged", lastStatusChanged);
             }
-
-            // Save in position attributes (persisted in DB)
-            position.getAttributes().put("motionStatus", device.getMotionStatus());
-            position.getAttributes().put("motionStatusChanged", device.getMotionStatusChanged());
 
         } catch (Exception e) {
             LOGGER.warn("Failed to update motion status", e);
