@@ -26,7 +26,7 @@ public class MotionStatusHandler extends BasePositionHandler {
             /*String lastStatusChanged = lastPosition != null
             ? (String) lastPosition.getAttributes().get("motionStatusChanged")
             : null;*/
-            Object value = lastPosition.getAttributes().get("motionStatusChanged");
+            Object value = lastPosition != null ? lastPosition.getAttributes().get("motionStatusChanged") : null;
             Date lastStatusChanged = null;
             if (value instanceof Date) {
                 lastStatusChanged = (Date) value;
