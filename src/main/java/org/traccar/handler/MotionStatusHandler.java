@@ -45,6 +45,10 @@ public class MotionStatusHandler extends BasePositionHandler {
             if (!newStatus.equals(device.getMotionStatus())) {
                 device.setMotionStatus(newStatus);
                 device.setMotionStatusChanged(position.getFixTime() != null ? position.getFixTime() : new Date());
+
+                storage.updateObject(device, new Request(
+                new Columns.Include("motionStatus", "motionStatusChanged"),
+                new Condition.Equals("id", device.getId())));
             }
 
             // Save in position attributes (persisted in DB)
