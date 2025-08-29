@@ -40,7 +40,8 @@ public class MotionStatusHandler extends BasePositionHandler {
             boolean ignition = Boolean.TRUE.equals(position.getAttributes().get("ignition"));
             boolean motion = Boolean.TRUE.equals(position.getAttributes().get("motion"));
             //double speed = position.getSpeed();
-
+            //LOGGER.info("Motion received: {}", motion);
+            //LOGGER.info("Motion sent: {}", position.getAttributes().get("motion"));
             String newStatus;
             if (motion) {
                 newStatus = "moving";

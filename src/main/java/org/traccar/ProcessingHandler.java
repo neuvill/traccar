@@ -96,6 +96,7 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
         bufferingManager = new BufferingManager(config, this);
 
         positionHandlers = Stream.of(
+                MotionHandler.class,
                 MotionStatusHandler.class,
                 ComputedAttributesHandler.Early.class,
                 OutdatedHandler.class,
@@ -107,7 +108,6 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
                 GeofenceHandler.class,
                 GeocoderHandler.class,
                 SpeedLimitHandler.class,
-                MotionHandler.class,
                 ComputedAttributesHandler.Late.class,
                 EngineHoursHandler.class,
                 DriverHandler.class,
