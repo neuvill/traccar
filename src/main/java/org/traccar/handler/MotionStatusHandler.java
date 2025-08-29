@@ -31,12 +31,12 @@ public class MotionStatusHandler extends BasePositionHandler {
 
             boolean ignition = Boolean.TRUE.equals(position.getAttributes().get("ignition"));
             boolean motion = Boolean.TRUE.equals(position.getAttributes().get("motion"));
-            double speed = position.getSpeed();
+            //double speed = position.getSpeed();
 
             String newStatus;
-            if ((ignition && speed > 0) || motion) {
+            if ((motion) {
                 newStatus = "moving";
-            } else if (ignition && speed == 0) {
+            } else if (ignition) {
                 newStatus = "idling";
             } else {
                 newStatus = "parked";
