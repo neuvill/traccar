@@ -1,22 +1,8 @@
-/*
- * Copyright 2016 - 2022 Anton Tananaev (anton@traccar.org)
- * Copyright 2016 Andrey Kunitsyn (andrey@traccar.org)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.traccar.reports;
 
 import org.apache.poi.ss.util.WorkbookUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.helper.model.DeviceUtil;
@@ -44,6 +30,8 @@ import java.util.Date;
 
 public class TripsReportProvider {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(TripsReportProvider.class);
+
     private final Config config;
     private final ReportUtils reportUtils;
     private final Storage storage;
@@ -58,34 +46,72 @@ public class TripsReportProvider {
     public Collection<TripReportItem> getObjects(
             long userId, Collection<Long> deviceIds, Collection<Long> groupIds,
             Date from, Date to) throws StorageException {
+
+        LOGGER.info("TripsReportProvider.getObjects called - userId={}, deviceIds={}, groupIds={}, from={}, to={}",
+                userId, deviceIds, groupIds, from, to);
+
         reportUtils.checkPeriodLimit(from, to);
 
         ArrayList<TripReportItem> result = new ArrayList<>();
-        for (Device device: DeviceUtil.getAccessibleDevices(storage, userId, deviceIds, groupIds)) {
-            result.addAll(reportUtils.detectTripsAndStops(device, from, to, TripReportItem.class));
+        Collection<Device> devices = DeviceUtil.getAccessibleDevices(storage, userId, deviceIds, groupIds);
+        LOGGER.info("Found {} accessible devices", devices.size());
+
+        for (Device device : devices) {
+            LOGGER.info("Detecting trips for deviceId={} ({}) from {} to {}",
+                    device.getId(), device.getName(), from, to);
+            LOGGER.info("DETECTING TRIPS AND STOPS");
+            Collection<TripReportItem> trips = reportUtils.detectTripsAndStops(device, from, to, TripReportItem.class);
+
+            LOGGER.info("Device {} ({}) - detected {} trips", device.getId(), device.getName(), trips.size());
+
+            for (TripReportItem trip : trips) {
+                LOGGER.info("Trip for device {} - start={}, end={}, duration={}s, distance={}m",
+                        device.getName(), trip.getStartTime(), trip.getEndTime(),
+                        trip.getDuration(), trip.getDistance());
+            }
+
+            result.addAll(trips);
         }
+
+        LOGGER.info("Total trips returned: {}", result.size());
         return result;
     }
 
     public void getExcel(OutputStream outputStream,
             long userId, Collection<Long> deviceIds, Collection<Long> groupIds,
             Date from, Date to) throws StorageException, IOException {
+
+        LOGGER.info("TripsReportProvider.getExcel called - userId={}, deviceIds={}, groupIds={}, from={}, to={}",
+                userId, deviceIds, groupIds, from, to);
+
         reportUtils.checkPeriodLimit(from, to);
 
         ArrayList<DeviceReportSection> devicesTrips = new ArrayList<>();
         ArrayList<String> sheetNames = new ArrayList<>();
-        for (Device device: DeviceUtil.getAccessibleDevices(storage, userId, deviceIds, groupIds)) {
+        Collection<Device> devices = DeviceUtil.getAccessibleDevices(storage, userId, deviceIds, groupIds);
+
+        LOGGER.info("Found {} accessible devices for Excel report", devices.size());
+
+        for (Device device : devices) {
+            LOGGER.info("Generating Excel trips for deviceId={} ({})", device.getId(), device.getName());
+
             Collection<TripReportItem> trips = reportUtils.detectTripsAndStops(device, from, to, TripReportItem.class);
+
+            LOGGER.info("Device {} ({}) - detected {} trips", device.getId(), device.getName(), trips.size());
+
             DeviceReportSection deviceTrips = new DeviceReportSection();
             deviceTrips.setDeviceName(device.getName());
             sheetNames.add(WorkbookUtil.createSafeSheetName(deviceTrips.getDeviceName()));
+
             if (device.getGroupId() > 0) {
                 Group group = storage.getObject(Group.class, new Request(
                         new Columns.All(), new Condition.Equals("id", device.getGroupId())));
                 if (group != null) {
+                    LOGGER.info("Device {} belongs to group {}", device.getName(), group.getName());
                     deviceTrips.setGroupName(group.getName());
                 }
             }
+
             deviceTrips.setObjects(trips);
             devicesTrips.add(deviceTrips);
         }
@@ -99,6 +125,8 @@ public class TripsReportProvider {
             context.putVar("to", to);
             reportUtils.processTemplateWithSheets(inputStream, outputStream, context);
         }
+
+        LOGGER.info("Excel report generation finished successfully");
     }
 
 }

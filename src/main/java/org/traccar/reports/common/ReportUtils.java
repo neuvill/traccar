@@ -17,6 +17,8 @@
 package org.traccar.reports.common;
 
 import jakarta.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.inject.Inject;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.tools.generic.DateTool;
@@ -66,6 +68,8 @@ import java.util.Locale;
 import java.util.Map;
 
 public class ReportUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReportUtils.class);
 
     private final Config config;
     private final Storage storage;
@@ -290,8 +294,10 @@ public class ReportUtils {
 
         long threshold = config.getLong(Keys.REPORT_FAST_THRESHOLD);
         if (Duration.between(from.toInstant(), to.toInstant()).toSeconds() > threshold) {
+            LOGGER.info("Using fastTripsAndStops for deviceId={} from {} to {}", device.getId(), from, to);
             return fastTripsAndStops(device, from, to, reportClass);
         } else {
+            LOGGER.info("Using slowTripsAndStops for deviceId={} from {} to {}", device.getId(), from, to);
             return slowTripsAndStops(device, from, to, reportClass);
         }
     }
