@@ -77,6 +77,7 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_REPORT_TEXT_MESSAGE = 0x6006;
     public static final int MSG_CONFIGURATION_PARAMETERS = 0x8103;
     public static final int MSG_COMMAND_RESPONSE = 0x0701;
+    public static final int MSG_DRIVER_IDENTITY = 0x0702;
 
     public static final int RESULT_SUCCESS = 0;
 
@@ -398,6 +399,25 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
 
             String result = buf.readCharSequence(buf.readInt(), StandardCharsets.US_ASCII).toString();
             position.set(Position.KEY_RESULT, result);
+
+            return position;
+
+        } else if (type == MSG_DRIVER_IDENTITY) {
+
+            Position position = new Position(getProtocolName());
+            position.setDeviceId(deviceSession.getDeviceId());
+
+            getLastLocation(position, null);
+
+            position.set("cardStatus", buf.readUnsignedByte());
+
+            position.setDeviceTime(readDate(buf, deviceSession.get(DeviceSession.KEY_TIMEZONE)));
+
+            position.set("cardResult", buf.readUnsignedByte());
+            position.set("driver", buf.readString(buf.readUnsignedByte(), StandardCharsets.US_ASCII));
+            position.set("cardCode", buf.readString(20, StandardCharsets.US_ASCII).trim());
+            position.set("cardAgency", buf.readString(buf.readUnsignedByte(), StandardCharsets.US_ASCII));
+            position.set("cardValidity", ByteBufUtil.hexDump(buf.readSlice(4)));
 
             return position;
 
@@ -836,6 +856,9 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                                 case 0x0023:
                                     position.set("fuel2", Double.parseDouble(
                                             buf.readCharSequence(6, StandardCharsets.US_ASCII).toString()));
+                                    break;
+                                case 0x002D:
+                                    position.set(Position.KEY_BATTERY, buf.readUnsignedShort() / 1000.0);
                                     break;
                                 case 0x00B2:
                                     position.set(Position.KEY_ICCID, ByteBufUtil.hexDump(
