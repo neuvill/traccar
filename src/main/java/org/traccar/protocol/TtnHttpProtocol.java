@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 - 2025 Anton Tananaev (anton@traccar.org)
+ * Copyright 2025 Stephen Horvath (me@stevetech.au)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,26 @@
  */
 package org.traccar.protocol;
 
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+import jakarta.inject.Inject;
 import org.traccar.BaseProtocol;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
 import org.traccar.config.Config;
 
-import jakarta.inject.Inject;
-import org.traccar.model.Command;
-
-public class IotmProtocol extends BaseProtocol {
+public class TtnHttpProtocol extends BaseProtocol {
 
     @Inject
-    public IotmProtocol(Config config) {
-        setSupportedDataCommands(
-                Command.TYPE_OUTPUT_CONTROL);
+    public TtnHttpProtocol(Config config) {
         addServer(new TrackerServer(config, getName(), false) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline, Config config) {
-                pipeline.addLast(MqttEncoder.INSTANCE);
-                pipeline.addLast(new MqttDecoder());
-                pipeline.addLast(new IotmProtocolEncoder(IotmProtocol.this));
-                pipeline.addLast(new IotmProtocolDecoder(IotmProtocol.this));
+                pipeline.addLast(new HttpResponseEncoder());
+                pipeline.addLast(new HttpRequestDecoder());
+                pipeline.addLast(new HttpObjectAggregator(16384));
+                pipeline.addLast(new TtnHttpProtocolDecoder(TtnHttpProtocol.this));
             }
         });
     }
