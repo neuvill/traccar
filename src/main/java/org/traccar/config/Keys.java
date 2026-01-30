@@ -1351,7 +1351,7 @@ public final class Keys {
     public static final ConfigKey<Boolean> REPORT_TRIP_NEW_LOGIC = new BooleanConfigKey(
             "report.trip.newLogic",
             List.of(KeyType.CONFIG),
-            false);
+            true);
 
     /**
      * Distance above min are considered as trips.
@@ -1368,6 +1368,15 @@ public final class Keys {
             "report.trip.minDuration",
             List.of(KeyType.CONFIG, KeyType.DEVICE),
             180L);
+
+    /**
+     * Gaps of more than specified time are treated as stop/trip/stop based on average speed.
+     * Default value is one hour.
+     */
+    public static final ConfigKey<Long> REPORT_TRIP_STOP_GAP = new LongConfigKey(
+            "report.trip.stopGap",
+            List.of(KeyType.CONFIG, KeyType.DEVICE),
+            3600L);
 
     /**
      * Trips less than minimal duration and minimal distance are ignored. 300 seconds and 500 meters are default.
