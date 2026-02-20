@@ -70,8 +70,7 @@ public final class NewMotionProcessor {
             long duration = position.getFixTime().getTime() - oldest.getFixTime().getTime();
             if (duration >= minDuration) {
                 state.setMotionStreak(false);
-                Position stopPosition = findStopPosition(positions, minAverageSpeed);
-                addEvent(state, events, Event.TYPE_DEVICE_STOPPED, stopPosition);
+                addEvent(state, events, Event.TYPE_DEVICE_STOPPED, position);
             }
         } else {
             double distance = DistanceCalculator.distance(
@@ -79,37 +78,9 @@ public final class NewMotionProcessor {
                     position.getLatitude(), position.getLongitude());
             if (distance >= minDistance) {
                 state.setMotionStreak(true);
-                Position motionPosition = findMotionPosition(positions, position, minAverageSpeed);
-                addEvent(state, events, Event.TYPE_DEVICE_MOVING, motionPosition);
+                addEvent(state, events, Event.TYPE_DEVICE_MOVING, position);
             }
         }
-    }
-
-    private static Position findStopPosition(Deque<Position> positions, double minAverageSpeed) {
-        var iterator = positions.iterator();
-        Position previous = iterator.next();
-        while (iterator.hasNext()) {
-            Position next = iterator.next();
-            if (averageSpeed(previous, next) < minAverageSpeed) {
-                return previous;
-            }
-            previous = next;
-        }
-        return previous;
-    }
-
-    private static Position findMotionPosition(
-            Deque<Position> positions, Position current, double minAverageSpeed) {
-        var iterator = positions.descendingIterator();
-        Position previous = current;
-        while (iterator.hasNext()) {
-            Position next = iterator.next();
-            if (averageSpeed(next, previous) >= minAverageSpeed) {
-                return next;
-            }
-            previous = next;
-        }
-        return current;
     }
 
     private static double averageSpeed(Position from, Position to) {
