@@ -284,6 +284,13 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Smartcar management token used for webhook verification.
+     */
+    public static final ConfigKey<String> SMARTCAR_MANAGEMENT_TOKEN = new StringConfigKey(
+            "smartcar.managementToken",
+            List.of(KeyType.CONFIG));
+
+    /**
      * Minimum accuracy to include. If the value is lower, it will be set to zero.
      */
     public static final ConfigKey<Double> OSMAND_MIN_ACCURACY = new DoubleConfigKey(
@@ -1293,6 +1300,35 @@ public final class Keys {
     public static final ConfigKey<Boolean> NOTIFICATOR_TELEGRAM_SEND_LOCATION = new BooleanConfigKey(
             "notificator.telegram.sendLocation",
             List.of(KeyType.CONFIG));
+
+    /**
+     * WhatsApp Cloud API permanent access token.
+     */
+    public static final ConfigKey<String> NOTIFICATOR_WHATSAPP_TOKEN = new StringConfigKey(
+            "notificator.whatsapp.token",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * WhatsApp Cloud API phone number id.
+     */
+    public static final ConfigKey<String> NOTIFICATOR_WHATSAPP_PHONE_NUMBER_ID = new StringConfigKey(
+            "notificator.whatsapp.phoneNumberId",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * WhatsApp Cloud API template name.
+     */
+    public static final ConfigKey<String> NOTIFICATOR_WHATSAPP_TEMPLATE_NAME = new StringConfigKey(
+            "notificator.whatsapp.templateName",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * WhatsApp Cloud API template language code. Default value is "en_US".
+     */
+    public static final ConfigKey<String> NOTIFICATOR_WHATSAPP_TEMPLATE_LANGUAGE = new StringConfigKey(
+            "notificator.whatsapp.templateLanguage",
+            List.of(KeyType.CONFIG),
+            "en_US");
 
     /**
      * Enable user expiration email notification.
