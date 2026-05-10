@@ -636,6 +636,13 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Maximum lifetime in milliseconds of a connection in the pool.
+     */
+    public static final ConfigKey<Integer> DATABASE_MAX_LIFETIME = new IntegerConfigKey(
+            "database.maxLifetime",
+            List.of(KeyType.CONFIG));
+
+    /**
      * Device limit for self registered users. Default value is -1, which indicates no limit.
      */
     public static final ConfigKey<Integer> USERS_DEFAULT_DEVICE_LIMIT = new IntegerConfigKey(
@@ -1864,6 +1871,36 @@ public final class Keys {
             "geocoder.onRequest",
             List.of(KeyType.CONFIG),
             true);
+
+    /**
+     * Boolean flag to enable map matcher. When enabled, position coordinates are aligned to the nearest road segment
+     * before further processing.
+     */
+    public static final ConfigKey<Boolean> MAP_MATCHER_ENABLE = new BooleanConfigKey(
+            "mapMatcher.enable",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Map matcher provider type. Currently only "traccar" is supported.
+     */
+    public static final ConfigKey<String> MAP_MATCHER_TYPE = new StringConfigKey(
+            "mapMatcher.type",
+            List.of(KeyType.CONFIG),
+            "traccar");
+
+    /**
+     * Map matcher service URL.
+     */
+    public static final ConfigKey<String> MAP_MATCHER_URL = new StringConfigKey(
+            "mapMatcher.url",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Map matcher provider API key.
+     */
+    public static final ConfigKey<String> MAP_MATCHER_KEY = new StringConfigKey(
+            "mapMatcher.key",
+            List.of(KeyType.CONFIG));
 
     /**
      * Boolean flag to enable LBS location resolution. Some devices send cell tower information and Wi-Fi points when

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Anton Tananaev (anton@traccar.org)
+ * Copyright 2022 - 2026 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,10 @@ public class DatabaseModule extends AbstractModule {
         hikariConfig.setConnectionInitSql(config.getString(Keys.DATABASE_CHECK_CONNECTION));
         hikariConfig.setIdleTimeout(600000);
 
+        int maxLifetime = config.getInteger(Keys.DATABASE_MAX_LIFETIME);
+        if (maxLifetime != 0) {
+            hikariConfig.setMaxLifetime(maxLifetime);
+        }
         int maxPoolSize = config.getInteger(Keys.DATABASE_MAX_POOL_SIZE);
         if (maxPoolSize != 0) {
             hikariConfig.setMaximumPoolSize(maxPoolSize);
