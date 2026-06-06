@@ -177,7 +177,7 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description="VORTEX-G1 Traccar protocol simulator")
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=5264)
+    parser.add_argument("--port", type=int, default=5280)
     parser.add_argument("--imei", default="012345678912345")
     parser.add_argument("--ccid", default="9999999999999999999")
     parser.add_argument("--firmware", default="1.0.0")
