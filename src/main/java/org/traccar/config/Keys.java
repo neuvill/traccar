@@ -955,14 +955,6 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
-     * Server debug version of the web app. Not recommended to use for performance reasons. It is intended to be used
-     * for development and debugging purposes.
-     */
-    public static final ConfigKey<Boolean> WEB_DEBUG = new BooleanConfigKey(
-            "web.debug",
-            List.of(KeyType.CONFIG));
-
-    /**
      * A token to log in as a virtual admin account. Can be used to restore access in case of issues with regular
      * admin login. For example, if a password is lost and can't be restored.
      */
@@ -1013,6 +1005,22 @@ public final class Keys {
     public static final ConfigKey<String> SERVER_FORWARD = new StringConfigKey(
             "server.forward",
             List.of(KeyType.CONFIG));
+
+    /**
+     * Raw data forwarding TCP connect timeout in milliseconds. Defaults to 5000.
+     */
+    public static final ConfigKey<Integer> SERVER_FORWARD_CONNECT_TIMEOUT = new IntegerConfigKey(
+            "server.forward.connectTimeout",
+            List.of(KeyType.CONFIG),
+            5000);
+
+    /**
+     * Raw data forwarding TCP write timeout in milliseconds. Defaults to 5000.
+     */
+    public static final ConfigKey<Integer> SERVER_FORWARD_WRITE_TIMEOUT = new IntegerConfigKey(
+            "server.forward.writeTimeout",
+            List.of(KeyType.CONFIG),
+            5000);
 
     /**
      * Position forwarding format. Available options are "url", "json" and "kafka". Default is "url".
@@ -1737,7 +1745,7 @@ public final class Keys {
      */
     public static final ConfigKey<String> TIME_OVERRIDE = new StringConfigKey(
             "time.override",
-            List.of(KeyType.CONFIG));
+            List.of(KeyType.CONFIG, KeyType.DEVICE));
 
     /**
      * List of protocols to enable. If not specified, Traccar enables all protocols that have port numbers listed.
