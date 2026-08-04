@@ -52,15 +52,20 @@ public class MotionStatusHandler extends BasePositionHandler {
                 newStatus = "parked";
             }
 
+            Date currentTime = position.getFixTime() != null ? position.getFixTime() : new Date();
+
             if (lastStatus == null || !newStatus.equals(lastStatus)) {
             // update new status
                 position.getAttributes().put("motionStatus", newStatus);
-                position.getAttributes().put("motionStatusChanged", position.getFixTime() != null
-                ? position.getFixTime() : new Date());
+                position.getAttributes().put("motionStatusChanged", currentTime);
+                position.getAttributes().put("motionStatusDuration", 0L);
             } else {
             // preserve old values
                 position.getAttributes().put("motionStatus", lastStatus);
                 position.getAttributes().put("motionStatusChanged", lastStatusChanged);
+                long duration = lastStatusChanged != null
+                        ? currentTime.getTime() - lastStatusChanged.getTime() : 0L;
+                position.getAttributes().put("motionStatusDuration", duration);
             }
 
         } catch (Exception e) {
