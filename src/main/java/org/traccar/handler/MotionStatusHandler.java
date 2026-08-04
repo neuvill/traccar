@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 public class MotionStatusHandler extends BasePositionHandler {
@@ -32,7 +33,7 @@ public class MotionStatusHandler extends BasePositionHandler {
                 lastStatusChanged = (Date) value;
             } else if (value instanceof String) {
                 try {
-                    lastStatusChanged = javax.xml.bind.DatatypeConverter.parseDateTime((String) value).getTime();
+                    lastStatusChanged = Date.from(OffsetDateTime.parse((String) value).toInstant());
                 } catch (Exception e) {
                     LOGGER.warn("Failed to convert motionStatusChanged", e);
                 }
