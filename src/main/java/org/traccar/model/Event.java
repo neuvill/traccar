@@ -51,6 +51,7 @@ public class Event extends Message {
     public static final String TYPE_DEVICE_STOPPED = "deviceStopped";
 
     public static final String TYPE_DEVICE_OVERSPEED = "deviceOverspeed";
+    public static final String TYPE_DEVICE_IDLE = "deviceIdle";
     public static final String TYPE_DEVICE_FUEL_DROP = "deviceFuelDrop";
     public static final String TYPE_DEVICE_FUEL_INCREASE = "deviceFuelIncrease";
 

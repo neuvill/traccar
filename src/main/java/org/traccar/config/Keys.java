@@ -476,6 +476,14 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Minimal idling duration to trigger the event. Value in seconds.
+     */
+    public static final ConfigKey<Long> EVENT_IDLE_MINIMAL_DURATION = new LongConfigKey(
+            "event.idle.minimalDuration",
+            List.of(KeyType.CONFIG),
+            900L);
+
+    /**
      * Relevant only for geofence speed limits. Use the lowest speed limit from all geofences.
      */
     public static final ConfigKey<Boolean> EVENT_OVERSPEED_PREFER_LOWEST = new BooleanConfigKey(

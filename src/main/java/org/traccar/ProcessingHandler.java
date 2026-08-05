@@ -51,6 +51,7 @@ import org.traccar.handler.events.CommandResultEventHandler;
 import org.traccar.handler.events.DriverEventHandler;
 import org.traccar.handler.events.FuelEventHandler;
 import org.traccar.handler.events.GeofenceEventHandler;
+import org.traccar.handler.events.IdlingEventHandler;
 import org.traccar.handler.events.IgnitionEventHandler;
 import org.traccar.handler.events.MaintenanceEventHandler;
 import org.traccar.handler.events.MediaEventHandler;
@@ -130,6 +131,7 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
                 BehaviorEventHandler.class,
                 FuelEventHandler.class,
                 MotionEventHandler.class,
+                IdlingEventHandler.class,
                 GeofenceEventHandler.class,
                 ProximityEventHandler.class,
                 AlarmEventHandler.class,
