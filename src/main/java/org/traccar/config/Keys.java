@@ -476,12 +476,13 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
-     * Minimal idling duration to trigger the event. Value in seconds.
+     * Minimal idling duration to trigger the event. Value in seconds. Can be set on server, group, or
+     * device level, same as speedLimit. 0 or unset disables idling event detection for that device.
      */
     public static final ConfigKey<Long> EVENT_IDLE_MINIMAL_DURATION = new LongConfigKey(
             "event.idle.minimalDuration",
-            List.of(KeyType.CONFIG),
-            900L);
+            List.of(KeyType.SERVER, KeyType.DEVICE),
+            0L);
 
     /**
      * Relevant only for geofence speed limits. Use the lowest speed limit from all geofences.

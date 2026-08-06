@@ -3,8 +3,8 @@ package org.traccar.handler.events;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.traccar.config.Config;
 import org.traccar.config.Keys;
+import org.traccar.helper.model.AttributeUtil;
 import org.traccar.helper.model.PositionUtil;
 import org.traccar.model.Device;
 import org.traccar.model.Event;
@@ -27,13 +27,11 @@ public class IdlingEventHandler extends BaseEventHandler {
 
     private final CacheManager cacheManager;
     private final Storage storage;
-    private final long minimalDuration;
 
     @Inject
-    public IdlingEventHandler(Config config, CacheManager cacheManager, Storage storage) {
+    public IdlingEventHandler(CacheManager cacheManager, Storage storage) {
         this.cacheManager = cacheManager;
         this.storage = storage;
-        minimalDuration = config.getLong(Keys.EVENT_IDLE_MINIMAL_DURATION) * 1000;
     }
 
     @Override
@@ -43,6 +41,12 @@ public class IdlingEventHandler extends BaseEventHandler {
         if (device == null || !PositionUtil.isLatest(cacheManager, position)) {
             return;
         }
+
+        long minimalDuration = AttributeUtil.lookup(cacheManager, Keys.EVENT_IDLE_MINIMAL_DURATION, device.getId());
+        if (minimalDuration <= 0) {
+            return;
+        }
+        minimalDuration *= 1000;
 
         String motionStatus = position.getString("motionStatus");
         if (motionStatus == null || position.getFixTime() == null) {
