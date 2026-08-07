@@ -1,0 +1,12 @@
+#set($subject = "$esc.html($device.name): الحالة غير معروفة")
+#set($digest = "$device.name الحالة غير معروفة في $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+الجهاز: $esc.html($device.name)<br>
+الحالة غير معروفة<br>
+الوقت: $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)<br>
+<br>
+<a href="$webUrl/settings/notifications?token=$token">إلغاء الاشتراك</a>
+</body>
+</html>

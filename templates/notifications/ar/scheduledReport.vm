@@ -1,0 +1,9 @@
+#set($subject = "تقرير")
+#set($digest = "التقرير المجدول جاهز: $webUrl$reportUrl")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+التقرير المجدول جاهز:<br>
+<a href="$webUrl$reportUrl">$webUrl$reportUrl</a><br>
+</body>
+</html>

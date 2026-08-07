@@ -1,0 +1,8 @@
+#set($subject = "انتهاء صلاحية الجهاز")
+#set($digest = "انتهت صلاحية اشتراك الجهاز $device.name")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+انتهت صلاحية اشتراك جهازك $esc.html($device.name).
+</body>
+</html>

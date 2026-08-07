@@ -1,0 +1,8 @@
+#set($subject = "تذكير بانتهاء صلاحية الحساب")
+#set($digest = "سينتهي الحساب بتاريخ $dateTool.format('yyyy-MM-dd', $expiration, $locale, $timezone)")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+سينتهي حسابك بتاريخ $dateTool.format('yyyy-MM-dd', $expiration, $locale, $timezone).
+</body>
+</html>

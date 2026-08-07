@@ -1,0 +1,18 @@
+#set($subject = "$esc.html($device.name): تم تغيير السائق")
+#if($driver)
+#set($driverName = $driver.name)
+#else
+#set($driverName = $event.getString('driverUniqueId'))
+#end
+#set($digest = "تم تغيير السائق $driverName في $device.name في $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+الجهاز: $esc.html($device.name)<br>
+الوقت: $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)<br>
+الموقع: <a href="$webUrl/event/$event.id">#{if}($position.address)$position.address#{else}$position.latitude&deg;, $position.longitude&deg;#{end}</a><br>
+السائق: $esc.html($driverName)<br>
+<br>
+<a href="$webUrl/settings/notifications?token=$token">إلغاء الاشتراك</a>
+</body>
+</html>

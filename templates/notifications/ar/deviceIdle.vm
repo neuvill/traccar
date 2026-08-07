@@ -1,0 +1,14 @@
+#set($subject = "$esc.html($device.name): خمول")
+#set($durationMinutes = $event.attributes.duration / 60000)
+#set($digest = "$device.name خامل منذ $durationMinutes دقيقة في $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+الجهاز: $esc.html($device.name)<br>
+مدة الخمول: $durationMinutes دقيقة<br>
+الوقت: $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)<br>
+الموقع: <a href="$webUrl/event/$event.id">#{if}($position.address)$position.address#{else}$position.latitude&deg;, $position.longitude&deg;#{end}</a><br>
+<br>
+<a href="$webUrl/settings/notifications?token=$token">إلغاء الاشتراك</a>
+</body>
+</html>

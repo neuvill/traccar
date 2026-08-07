@@ -1,0 +1,8 @@
+#set($subject = "انتهاء صلاحية الحساب")
+#set($digest = "انتهت صلاحية الحساب")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+انتهت صلاحية حسابك.
+</body>
+</html>

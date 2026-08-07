@@ -1,0 +1,13 @@
+#set($subject = "$esc.html($device.name): الصيانة مطلوبة")
+#set($digest = "$device.name الصيانة $maintenance.name مطلوبة في $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+الجهاز: $esc.html($device.name)<br>
+الصيانة مطلوبة: $esc.html($maintenance.name)<br>
+الوقت: $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)<br>
+الموقع: <a href="$webUrl/event/$event.id">#{if}($position.address)$position.address#{else}$position.latitude&deg;, $position.longitude&deg;#{end}</a><br>
+<br>
+<a href="$webUrl/settings/notifications?token=$token">إلغاء الاشتراك</a>
+</body>
+</html>

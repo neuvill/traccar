@@ -1,0 +1,8 @@
+#set($subject = "تذكير بانتهاء صلاحية الجهاز")
+#set($digest = "سينتهي اشتراك الجهاز $device.name بتاريخ $dateTool.format('yyyy-MM-dd', $expiration, $locale, $timezone)")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+سينتهي اشتراك جهازك $esc.html($device.name) بتاريخ $dateTool.format('yyyy-MM-dd', $expiration, $locale, $timezone).
+</body>
+</html>

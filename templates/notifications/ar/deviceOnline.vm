@@ -1,0 +1,12 @@
+#set($subject = "$esc.html($device.name): متصل")
+#set($digest = "$device.name متصل منذ $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+الجهاز: $esc.html($device.name)<br>
+متصل<br>
+الوقت: $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)<br>
+<br>
+<a href="$webUrl/settings/notifications?token=$token">إلغاء الاشتراك</a>
+</body>
+</html>

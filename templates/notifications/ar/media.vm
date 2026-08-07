@@ -1,0 +1,14 @@
+#set($subject = "$esc.html($device.name): تم استلام ملف وسائط")
+#set($digest = "$device.name استلم $event.getString('media'): $event.getString('file') في $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)")
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body>
+الجهاز: $esc.html($device.name)<br>
+النوع: $esc.html($event.getString('media'))<br>
+الملف: <a href="$webUrl/api/media/$device.uniqueId/$esc.html($event.getString('file'))">$esc.html($event.getString('file'))</a><br>
+الوقت: $dateTool.format('yyyy-MM-dd HH:mm:ss', $event.eventTime, $locale, $timezone)<br>
+الرابط: <a href="$webUrl/event/$event.id">$webUrl/event/$event.id</a><br>
+<br>
+<a href="$webUrl/settings/notifications?token=$token">إلغاء الاشتراك</a>
+</body>
+</html>
