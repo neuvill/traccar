@@ -1,0 +1,15 @@
+#set($subject = "$esc.html($device.name): na jałowym biegu")
+#set($durationMinutes = $event.attributes.duration / 60000)
+#set($digest = "$device.name na jałowym biegu od $durationMinutes min: $dateTool.format('dd-MM-yyyy HH:mm:ss', $event.eventTime, $locale, $timezone)")
+<!DOCTYPE html>
+<html>
+<body>
+Urządzenie: $esc.html($device.name)<br>
+Na jałowym biegu<br>
+Czas jałowego biegu: $durationMinutes min<br>
+Czas: $dateTool.format('dd-MM-yyyy HH:mm:ss', $event.eventTime, $locale, $timezone)<br>
+Lokalizacja: <a href="$webUrl/event/$event.id">#{if}($position.address)$position.address#{else}$position.latitude&deg;, $position.longitude&deg;#{end}</a><br>
+<br>
+<a href="$webUrl/settings/notifications?token=$token">Unsubscribe</a>
+</body>
+</html>

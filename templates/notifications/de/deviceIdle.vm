@@ -1,0 +1,15 @@
+#set($subject = "$esc.html($device.name): im Leerlauf")
+#set($durationMinutes = $event.attributes.duration / 60000)
+#set($digest = "$device.name im Leerlauf seit $durationMinutes Minuten am $dateTool.format('dd.MM.yyyy', $event.eventTime, $locale, $timezone) um $dateTool.format('HH:mm:ss', $event.eventTime, $locale, $timezone) Uhr")
+<!DOCTYPE html>
+<html>
+<body>
+Ger&auml;t: $esc.html($device.name)<br>
+Im Leerlauf<br>
+Leerlaufdauer: $durationMinutes Minuten<br>
+seit $dateTool.format('dd.MM.yyyy', $event.eventTime, $locale, $timezone) um $dateTool.format('HH:mm:ss', $event.eventTime, $locale, $timezone) Uhr<br>
+Position: <a href="$webUrl/event/$event.id">#{if}($position.address)$position.address#{else}$position.latitude&deg;, $position.longitude&deg;#{end}</a><br>
+<br>
+<a href="$webUrl/settings/notifications?token=$token">Unsubscribe</a>
+</body>
+</html>
