@@ -2160,6 +2160,21 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Sets cookie Domain attribute for the session cookie. Useful for sharing the session across
+     * subdomains, for example ".example.com".
+     */
+    public static final ConfigKey<String> WEB_SESSION_COOKIE_DOMAIN = new StringConfigKey(
+            "web.sessionCookieDomain",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Marks the session cookie as Secure (sent over HTTPS only), independent of the SameSite setting.
+     */
+    public static final ConfigKey<Boolean> WEB_SESSION_COOKIE_SECURE = new BooleanConfigKey(
+            "web.sessionCookieSecure",
+            List.of(KeyType.CONFIG));
+
+    /**
      * Enables persisting Jetty sessions to the database.
      */
     public static final ConfigKey<Boolean> WEB_PERSIST_SESSION = new BooleanConfigKey(

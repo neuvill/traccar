@@ -218,6 +218,15 @@ public class WebServer implements LifecycleObject {
 
         SessionCookieConfig sessionCookieConfig = servletHandler.getServletContext().getSessionCookieConfig();
 
+        String sessionCookieDomain = config.getString(Keys.WEB_SESSION_COOKIE_DOMAIN);
+        if (sessionCookieDomain != null) {
+            sessionCookieConfig.setDomain(sessionCookieDomain);
+        }
+
+        if (config.getBoolean(Keys.WEB_SESSION_COOKIE_SECURE)) {
+            sessionCookieConfig.setSecure(true);
+        }
+
         int sessionTimeout = config.getInteger(Keys.WEB_SESSION_TIMEOUT);
         if (sessionTimeout > 0) {
             servletHandler.getSessionHandler().setMaxInactiveInterval(sessionTimeout);
