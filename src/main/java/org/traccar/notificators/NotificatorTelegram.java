@@ -26,6 +26,7 @@ import jakarta.ws.rs.client.Entity;
 import org.glassfish.jersey.client.ClientProperties;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
+import org.traccar.helper.WebHelper;
 import org.traccar.model.Event;
 import org.traccar.model.Position;
 import org.traccar.model.User;
@@ -69,10 +70,16 @@ public class NotificatorTelegram extends Notificator {
     public NotificatorTelegram(Config config, NotificationFormatter notificationFormatter,
             Client client, Provider<ClientBuilder> clientBuilderProvider) {
         super(notificationFormatter);
+
+        String baseUrl = config.getString(Keys.NOTIFICATOR_TELEGRAM_BASE_URL);
+        if (baseUrl == null) {
+            baseUrl = "https://api.telegram.org/bot";
+        }
+
         urlSendText = String.format(
-                "https://api.telegram.org/bot%s/sendMessage", config.getString(Keys.NOTIFICATOR_TELEGRAM_KEY));
+                "%s%s/sendMessage", baseUrl, config.getString(Keys.NOTIFICATOR_TELEGRAM_KEY));
         urlSendLocation = String.format(
-                "https://api.telegram.org/bot%s/sendLocation", config.getString(Keys.NOTIFICATOR_TELEGRAM_KEY));
+                "%s%s/sendLocation", baseUrl, config.getString(Keys.NOTIFICATOR_TELEGRAM_KEY));
         chatId = config.getString(Keys.NOTIFICATOR_TELEGRAM_CHAT_ID);
         sendLocation = config.getBoolean(Keys.NOTIFICATOR_TELEGRAM_SEND_LOCATION);
 
@@ -119,13 +126,14 @@ public class NotificatorTelegram extends Notificator {
                 ? user.getBoolean(Keys.NOTIFICATOR_TELEGRAM_SEND_LOCATION.getKey())
                 : sendLocation;
 
-        return post(client.target(urlSendText).request(), Entity.json(message), response -> {}).thenCompose(v -> {
-            if (sendUserLocation && position != null) {
-                return post(client.target(urlSendLocation).request(),
-                        Entity.json(createLocationMessage(message.chatId, position)), response -> {});
-            }
-            return CompletableFuture.completedFuture(null);
-        });
+        return WebHelper.post(client.target(urlSendText).request(), Entity.json(message), response -> {})
+                .thenCompose(v -> {
+                    if (sendUserLocation && position != null) {
+                        return WebHelper.post(client.target(urlSendLocation).request(),
+                                Entity.json(createLocationMessage(message.chatId, position)), response -> {});
+                    }
+                    return CompletableFuture.completedFuture(null);
+                });
     }
 
 }

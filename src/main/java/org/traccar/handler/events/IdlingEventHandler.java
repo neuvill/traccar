@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.config.Keys;
 import org.traccar.helper.model.AttributeUtil;
-import org.traccar.helper.model.PositionUtil;
 import org.traccar.model.Device;
 import org.traccar.model.Event;
 import org.traccar.model.Position;
@@ -16,7 +15,7 @@ import org.traccar.storage.query.Columns;
 import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
-public class IdlingEventHandler extends BaseEventHandler {
+public class IdlingEventHandler extends BasePositionEventHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IdlingEventHandler.class);
 
@@ -25,20 +24,19 @@ public class IdlingEventHandler extends BaseEventHandler {
     private static final String ATTRIBUTE_IDLING_SINCE = "idlingSince";
     private static final String ATTRIBUTE_IDLING_EVENT_ID = "idlingEventId";
 
-    private final CacheManager cacheManager;
     private final Storage storage;
 
     @Inject
     public IdlingEventHandler(CacheManager cacheManager, Storage storage) {
-        this.cacheManager = cacheManager;
+        super(cacheManager);
         this.storage = storage;
     }
 
     @Override
-    public void onPosition(Position position, Callback callback) {
+    protected void onPosition(Position position, Position lastPosition, Callback callback) {
 
         Device device = cacheManager.getObject(Device.class, position.getDeviceId());
-        if (device == null || !PositionUtil.isLatest(cacheManager, position)) {
+        if (device == null) {
             return;
         }
 
