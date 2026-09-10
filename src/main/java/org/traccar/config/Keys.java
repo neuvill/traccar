@@ -2008,6 +2008,15 @@ public final class Keys {
             true);
 
     /**
+     * When a position is inside a geofence, use the geofence name as the address instead of performing
+     * reverse geocoding. Can be set on server, group, or device level.
+     */
+    public static final ConfigKey<Boolean> GEOCODER_GEOFENCE_ADDRESS = new BooleanConfigKey(
+            "geocoder.geofenceAddress",
+            List.of(KeyType.CONFIG, KeyType.DEVICE),
+            false);
+
+    /**
      * Boolean flag to enable map matcher. When enabled, position coordinates are aligned to the nearest road segment
      * before further processing.
      */

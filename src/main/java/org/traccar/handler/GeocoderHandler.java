@@ -20,8 +20,12 @@ import org.slf4j.LoggerFactory;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.geocoder.Geocoder;
+import org.traccar.helper.model.AttributeUtil;
+import org.traccar.model.Geofence;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+
+import java.util.List;
 
 public class GeocoderHandler extends BasePositionHandler {
 
@@ -41,6 +45,18 @@ public class GeocoderHandler extends BasePositionHandler {
 
     @Override
     public void onPosition(Position position, Callback callback) {
+        if (AttributeUtil.lookup(cacheManager, Keys.GEOCODER_GEOFENCE_ADDRESS, position.getDeviceId())) {
+            List<Long> geofenceIds = position.getGeofenceIds();
+            if (geofenceIds != null && !geofenceIds.isEmpty()) {
+                Geofence geofence = cacheManager.getObject(Geofence.class, geofenceIds.get(0));
+                if (geofence != null) {
+                    position.setAddress(geofence.getName());
+                    callback.processed(false);
+                    return;
+                }
+            }
+        }
+
         if (!ignorePositions) {
             if (reuseDistance != 0) {
                 Position lastPosition = cacheManager.getPosition(position.getDeviceId());
