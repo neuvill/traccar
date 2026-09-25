@@ -991,6 +991,14 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Include stack traces in API error responses. Disable to return only error messages.
+     */
+    public static final ConfigKey<Boolean> WEB_SHOW_STACK_TRACES = new BooleanConfigKey(
+            "web.showStackTraces",
+            List.of(KeyType.CONFIG),
+            true);
+
+    /**
      * A token to log in as a virtual admin account. Can be used to restore access in case of issues with regular
      * admin login. For example, if a password is lost and can't be restored.
      */
@@ -1110,6 +1118,7 @@ public final class Keys {
 
     /**
      * Additional HTTP header that can be used for authorization.
+     * Global headers are only used when forwarding to the globally configured URL.
      */
     public static final ConfigKey<String> FORWARD_HEADER = new StringConfigKey(
             "forward.header",
