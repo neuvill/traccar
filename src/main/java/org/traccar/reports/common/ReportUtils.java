@@ -26,6 +26,7 @@ import org.apache.velocity.tools.generic.NumberTool;
 import org.jxls.area.Area;
 import org.jxls.builder.xls.XlsCommentAreaBuilder;
 import org.jxls.common.CellRef;
+import org.jxls.common.Context;
 import org.jxls.formula.StandardFormulaProcessor;
 import org.jxls.transform.Transformer;
 import org.jxls.transform.poi.PoiTransformer;
@@ -169,7 +170,7 @@ public class ReportUtils {
         return null;
     }
 
-    public org.jxls.common.Context initializeContext(long userId) throws StorageException {
+    public Context initializeContext(long userId) throws StorageException {
         var server = permissionsService.getServer();
         var user = permissionsService.getUser(userId);
         var context = PoiTransformer.createInitialContext();
@@ -186,7 +187,7 @@ public class ReportUtils {
     }
 
     public void processTemplateWithSheets(
-            InputStream templateStream, OutputStream targetStream, org.jxls.common.Context context) throws IOException {
+            InputStream templateStream, OutputStream targetStream, Context context) throws IOException {
 
         Transformer transformer = TransformerFactory.createTransformer(templateStream, targetStream);
         List<Area> xlsAreas = new XlsCommentAreaBuilder(transformer).build();
