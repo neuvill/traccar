@@ -15,12 +15,12 @@
  */
 package org.traccar.model;
 
-import java.util.Date;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.traccar.storage.QueryIgnore;
 import org.traccar.storage.StorageName;
+
+import java.util.Date;
+import java.util.List;
 
 @StorageName("tc_positions")
 public class Position extends Message {
@@ -320,8 +320,8 @@ public class Position extends Message {
         return geofenceIds;
     }
 
-//adding new columns
-/*
+    //adding new columns
+    /*
 
     private String motionStatus;
 
@@ -343,7 +343,7 @@ public class Position extends Message {
         this.motionStatusChanged = motionStatusChanged;
     }
 */
-//columns added
+    //columns added
 
     public void setGeofenceIds(List<? extends Number> geofenceIds) {
         if (geofenceIds != null) {

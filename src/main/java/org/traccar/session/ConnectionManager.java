@@ -320,7 +320,7 @@ public class ConnectionManager implements BroadcastInterface {
         }
         // updating MotionStatus
 
-    /*try {
+        /*try {
         Device device = storage.getObject(Device.class, new Request(
                 new Columns.All(), new Condition.Equals("id", position.getDeviceId())));
         String newMotionStatus;
@@ -427,9 +427,13 @@ public class ConnectionManager implements BroadcastInterface {
 
     public interface UpdateListener {
         void onKeepalive();
+
         void onUpdateDevice(Device device);
+
         void onUpdatePosition(Position position);
+
         void onUpdateEvent(Event event);
+
         void onUpdateLog(LogRecord record);
     }
 

@@ -42,19 +42,28 @@ public class Xexun3ProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_DATA = 0x20;
     public static final int MSG_COMMAND = 0x21;
 
+    static ByteBuf encodeContent(int type, int index, ByteBuf imei, ByteBuf content) {
+        int length = 11 + content.readableBytes();
+        ByteBuf buf = Unpooled.buffer();
+        buf.writeByte(0xFC); // start
+        buf.writeShort(length);
+        buf.writeByte(0x03); // version
+        buf.writeByte(type);
+        buf.writeByte(index);
+        buf.writeBytes(imei, imei.readerIndex(), 8);
+        buf.writeBytes(content);
+        buf.writeShort(Checksum.crc16(
+                Checksum.CRC16_CCITT_FALSE, buf.nioBuffer(3, length)));
+        buf.writeByte(0xCF); // end
+        return buf;
+    }
+
     private void sendResponse(Channel channel, int type, int index, ByteBuf imei) {
         if (channel != null) {
-            ByteBuf response = Unpooled.buffer();
-            response.writeByte(0xFC);
-            response.writeShort(12); // length
-            response.writeByte(0x03); // version
-            response.writeByte(type);
-            response.writeByte(index);
-            response.writeBytes(imei, imei.readerIndex(), 8);
-            response.writeByte(0); // result
-            response.writeShort(Checksum.crc16(
-                    Checksum.CRC16_CCITT_FALSE, response.nioBuffer(3, 12)));
-            response.writeByte(0xCF);
+            ByteBuf content = Unpooled.buffer();
+            content.writeByte(0); // result
+            content.writeInt((int) (System.currentTimeMillis() / 1000));
+            ByteBuf response = encodeContent(type, index, imei, content);
             channel.writeAndFlush(new NetworkMessage(response, channel.remoteAddress()));
         }
     }
@@ -198,6 +207,12 @@ public class Xexun3ProtocolDecoder extends BaseProtocolDecoder {
                     int fuel = buf.readUnsignedByte();
                     if (fuel != 0xFF) {
                         position.set(Position.KEY_FUEL_LEVEL, fuel);
+                    }
+                    if (subEnd - buf.readerIndex() >= 4) {
+                        long deviceTime = buf.readUnsignedInt();
+                        if (deviceTime != 0xFFFFFFFFL) {
+                            position.setDeviceTime(new Date(deviceTime * 1000));
+                        }
                     }
                 }
                 default -> {}

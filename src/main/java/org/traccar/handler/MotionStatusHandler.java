@@ -1,10 +1,11 @@
 package org.traccar.handler;
 
-import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+
+import jakarta.inject.Inject;
 import java.time.OffsetDateTime;
 import java.util.Date;
 
@@ -55,12 +56,12 @@ public class MotionStatusHandler extends BasePositionHandler {
             Date currentTime = position.getFixTime() != null ? position.getFixTime() : new Date();
 
             if (lastStatus == null || !newStatus.equals(lastStatus)) {
-            // update new status
+                // update new status
                 position.getAttributes().put("motionStatus", newStatus);
                 position.getAttributes().put("motionStatusChanged", currentTime);
                 position.getAttributes().put("motionStatusDuration", 0L);
             } else {
-            // preserve old values
+                // preserve old values
                 position.getAttributes().put("motionStatus", lastStatus);
                 position.getAttributes().put("motionStatusChanged", lastStatusChanged);
                 long duration = lastStatusChanged != null
