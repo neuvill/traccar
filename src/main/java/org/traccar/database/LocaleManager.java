@@ -60,10 +60,15 @@ public class LocaleManager {
     }
 
     public Map<String, String> getBundle(String language) {
+        return getBundle(path, language);
+    }
+
+    public Map<String, String> getBundle(Path root, String language) {
         String resolvedLanguage = Objects.requireNonNullElse(sanitizeLanguage(language), DEFAULT_LANGUAGE);
-        return languageBundles.computeIfAbsent(resolvedLanguage, missingLanguage -> {
-            Path targetFile = path.resolve(missingLanguage + ".json");
-            Path file = Files.exists(targetFile) ? targetFile : path.resolve(DEFAULT_LANGUAGE + ".json");
+        String cacheKey = root + "::" + resolvedLanguage;
+        return languageBundles.computeIfAbsent(cacheKey, missingKey -> {
+            Path targetFile = root.resolve(resolvedLanguage + ".json");
+            Path file = Files.exists(targetFile) ? targetFile : root.resolve(DEFAULT_LANGUAGE + ".json");
             if (Files.exists(file)) {
                 try (InputStream in = Files.newInputStream(file)) {
                     return objectMapper.readValue(in, new TypeReference<>() {});

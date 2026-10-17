@@ -26,6 +26,7 @@ import org.traccar.reports.CombinedReportProvider;
 import org.traccar.reports.DevicesReportProvider;
 import org.traccar.reports.EventsReportProvider;
 import org.traccar.reports.GeofenceReportProvider;
+import org.traccar.reports.ItineraryReportProvider;
 import org.traccar.reports.RouteReportProvider;
 import org.traccar.reports.StopsReportProvider;
 import org.traccar.reports.SummaryReportProvider;
@@ -34,6 +35,7 @@ import org.traccar.reports.common.ReportExecutor;
 import org.traccar.reports.common.ReportMailer;
 import org.traccar.reports.model.CombinedReportItem;
 import org.traccar.reports.model.GeofenceReportItem;
+import org.traccar.reports.model.ItineraryEntry;
 import org.traccar.reports.model.StopReportItem;
 import org.traccar.reports.model.SummaryReportItem;
 import org.traccar.reports.model.TripReportItem;
@@ -53,6 +55,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -64,6 +67,7 @@ import java.util.stream.Stream;
 public class ReportResource extends SimpleObjectResource<Report> {
 
     private static final String EXCEL = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private static final String PDF = "application/pdf";
 
     @Inject
     private CombinedReportProvider combinedReportProvider;
@@ -85,6 +89,9 @@ public class ReportResource extends SimpleObjectResource<Report> {
 
     @Inject
     private TripsReportProvider tripsReportProvider;
+
+    @Inject
+    private ItineraryReportProvider itineraryReportProvider;
 
     @Inject
     private DevicesReportProvider devicesReportProvider;
@@ -351,6 +358,39 @@ public class ReportResource extends SimpleObjectResource<Report> {
             @QueryParam("to") Date to,
             @PathParam("type") String type) throws StorageException {
         return getStopsExcel(deviceIds, groupIds, from, to, type.equals("mail"));
+    }
+
+    @Path("trips-stops")
+    @GET
+    public Collection<ItineraryEntry> getTripsStops(
+            @QueryParam("deviceId") List<Long> deviceIds,
+            @QueryParam("groupId") List<Long> groupIds,
+            @QueryParam("from") Date from,
+            @QueryParam("to") Date to) throws StorageException {
+        permissionsService.checkRestriction(getUserId(), UserRestrictions::getDisableReports);
+        actionLogger.report(request, getUserId(), false, "trips-stops", from, to, deviceIds, groupIds);
+        return itineraryReportProvider.getObjects(getUserId(), deviceIds, groupIds, from, to);
+    }
+
+    @Path("trips-stops/pdf")
+    @GET
+    @Produces(PDF)
+    public Response getTripsStopsPdf(
+            @QueryParam("deviceId") List<Long> deviceIds,
+            @QueryParam("groupId") List<Long> groupIds,
+            @QueryParam("from") Date from,
+            @QueryParam("to") Date to) throws StorageException {
+        permissionsService.checkRestriction(getUserId(), UserRestrictions::getDisableReports);
+        StreamingOutput stream = output -> {
+            try {
+                actionLogger.report(request, getUserId(), false, "trips-stops", from, to, deviceIds, groupIds);
+                itineraryReportProvider.getPdf(output, getUserId(), deviceIds, groupIds, from, to);
+            } catch (StorageException | IOException e) {
+                throw new WebApplicationException(e);
+            }
+        };
+        return Response.ok(stream)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=trips-stops.pdf").build();
     }
 
     @Path("devices/{type:xlsx|mail}")

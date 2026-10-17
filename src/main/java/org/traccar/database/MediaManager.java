@@ -68,6 +68,16 @@ public class MediaManager {
         return new FileOutputStream(createFile(uniqueId, name + "." + extension));
     }
 
+    public File findFile(String uniqueId, String name, String... extensions) {
+        for (String extension : extensions) {
+            Path filePath = path.resolve(uniqueId).resolve(name + "." + extension).normalize();
+            if (filePath.startsWith(path) && Files.exists(filePath)) {
+                return filePath.toFile();
+            }
+        }
+        return null;
+    }
+
     public String writeFile(String uniqueId, ByteBuf buf, String extension) {
         if (path != null) {
             int size = buf.readableBytes();

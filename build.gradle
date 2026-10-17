@@ -128,6 +128,8 @@ dependencies {
     implementation "org.jxls:jxls-poi:$jxlsVersion"
     implementation "org.apache.velocity:velocity-engine-core:2.4.1"
     implementation "org.apache.velocity.tools:velocity-tools-generic:3.1"
+    implementation "com.openhtmltopdf:openhtmltopdf-core:1.0.10"
+    implementation "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10"
     implementation "org.apache.commons:commons-collections4:4.6.0"
     implementation "org.mnode.ical4j:ical4j:4.3.0"
     implementation "org.locationtech.spatial4j:spatial4j:0.8"

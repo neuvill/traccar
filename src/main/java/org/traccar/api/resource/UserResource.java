@@ -19,6 +19,7 @@ import com.warrenstrange.googleauth.GoogleAuthenticator;
 import org.traccar.api.BaseObjectResource;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
+import org.traccar.database.MediaManager;
 import org.traccar.helper.LogAction;
 import org.traccar.helper.SessionHelper;
 import org.traccar.helper.model.UserUtil;
@@ -38,14 +39,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -55,11 +61,17 @@ import java.util.stream.Stream;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource extends BaseObjectResource<User> {
 
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int IMAGE_SIZE_LIMIT = 500000;
+
     @Inject
     private Config config;
 
     @Inject
     private LogAction actionLogger;
+
+    @Inject
+    private MediaManager mediaManager;
 
     @Context
     private HttpServletRequest request;
@@ -158,6 +170,42 @@ public class UserResource extends BaseObjectResource<User> {
             throw new SecurityException("One-time password is disabled");
         }
         return new GoogleAuthenticator().createCredentials().getKey();
+    }
+
+    private String imageExtension(String type) {
+        return switch (type) {
+            case "image/jpeg" -> "jpg";
+            case "image/png" -> "png";
+            default -> throw new IllegalArgumentException("Unsupported image type");
+        };
+    }
+
+    @Path("{id}/image/{slot:logo|stamp}")
+    @POST
+    @Consumes("image/*")
+    public Response uploadImage(
+            @PathParam("id") long userId, @PathParam("slot") String slot, File file,
+            @HeaderParam(HttpHeaders.CONTENT_TYPE) String type) throws StorageException, IOException {
+
+        permissionsService.checkUser(getUserId(), userId);
+
+        String folderId = "user-" + userId;
+        String extension = imageExtension(type);
+        try (var input = new FileInputStream(file);
+                var output = mediaManager.createFileStream(folderId, slot, extension)) {
+
+            long transferred = 0;
+            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+            int read;
+            while ((read = input.read(buffer, 0, buffer.length)) >= 0) {
+                output.write(buffer, 0, read);
+                transferred += read;
+                if (transferred > IMAGE_SIZE_LIMIT) {
+                    throw new IllegalArgumentException("Image size limit exceeded");
+                }
+            }
+        }
+        return Response.ok(slot + "." + extension).build();
     }
 
 }
