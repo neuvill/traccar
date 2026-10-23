@@ -1,5 +1,8 @@
 package org.traccar.reports.model;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class ItineraryRow {
 
     private boolean trip;
@@ -34,6 +37,25 @@ public class ItineraryRow {
 
     public void setDuration(String duration) {
         this.duration = duration;
+    }
+
+    /**
+     * Address split into its comma-separated parts. The PDF renders each part as its own bidi unit, so numbers
+     * such as postcodes keep their place next to Arabic text instead of being reordered into it.
+     */
+    public List<String> getFromAddressParts() {
+        return splitAddress(fromAddress);
+    }
+
+    public List<String> getToAddressParts() {
+        return splitAddress(toAddress);
+    }
+
+    private static List<String> splitAddress(String address) {
+        if (address == null || address.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(address.split(",")).map(String::trim).filter(part -> !part.isEmpty()).toList();
     }
 
     public String getFromAddress() {

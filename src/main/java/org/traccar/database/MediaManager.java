@@ -78,6 +78,15 @@ public class MediaManager {
         return null;
     }
 
+    public void deleteFile(String uniqueId, String name, String... extensions) throws IOException {
+        for (String extension : extensions) {
+            Path filePath = path.resolve(uniqueId).resolve(name + "." + extension).normalize();
+            if (filePath.startsWith(path)) {
+                Files.deleteIfExists(filePath);
+            }
+        }
+    }
+
     public String writeFile(String uniqueId, ByteBuf buf, String extension) {
         if (path != null) {
             int size = buf.readableBytes();

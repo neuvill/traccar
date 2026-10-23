@@ -1,11 +1,17 @@
 package org.traccar.reports;
 
+import com.openhtmltopdf.bidi.support.ICUBidiReorderer;
+import com.openhtmltopdf.bidi.support.ICUBidiSplitter;
+import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle;
 import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.PageSizeUnits;
+import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.TextDirection;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.tools.generic.EscapeTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.api.security.PermissionsService;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
@@ -17,6 +23,7 @@ import org.traccar.model.Device;
 import org.traccar.model.Group;
 import org.traccar.model.Server;
 import org.traccar.model.User;
+import org.traccar.reports.common.ReportImage;
 import org.traccar.reports.common.ReportUtils;
 import org.traccar.reports.model.ItineraryEntry;
 import org.traccar.reports.model.ItineraryRow;
@@ -52,6 +59,11 @@ import java.util.Objects;
 import java.util.TimeZone;
 
 public class ItineraryReportProvider {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ItineraryReportProvider.class);
+
+    /** Shown in the masthead instead of a logo when the user hasn't uploaded one. */
+    static final String DEFAULT_BRAND_NAME = "HM GLOBAL TECHNOLOGIES";
 
     private final Config config;
     private final ReportUtils reportUtils;
@@ -104,6 +116,23 @@ public class ItineraryReportProvider {
 
         PdfRendererBuilder builder = new PdfRendererBuilder();
         builder.useDefaultPageSize(210, 297, PageSizeUnits.MM);
+
+        // addresses from the geocoder mix Latin, Arabic and Tifinagh, so embed fonts covering all three
+        // and enable bidi + Arabic shaping; the document itself stays left-to-right
+        Path fonts = Path.of(config.getString(Keys.TEMPLATES_ROOT), "export", "itinerary", "fonts");
+        builder.useFont(fonts.resolve("NotoSans-Regular.ttf").toFile(), "Noto Sans", 400, FontStyle.NORMAL, true);
+        builder.useFont(fonts.resolve("NotoSans-Bold.ttf").toFile(), "Noto Sans", 700, FontStyle.NORMAL, true);
+        builder.useFont(fonts.resolve("NotoSansArabic-Regular.ttf").toFile(),
+                "Noto Sans Arabic", 400, FontStyle.NORMAL, true);
+        builder.useFont(fonts.resolve("NotoSansArabic-Bold.ttf").toFile(),
+                "Noto Sans Arabic", 700, FontStyle.NORMAL, true);
+        builder.useFont(fonts.resolve("NotoSansTifinagh-Regular.ttf").toFile(),
+                "Noto Sans Tifinagh", 400, FontStyle.NORMAL, true);
+        builder.useFont(fonts.resolve("NotoSansTifinagh-Regular.ttf").toFile(),
+                "Noto Sans Tifinagh", 700, FontStyle.NORMAL, true);
+        builder.useUnicodeBidiSplitter(new ICUBidiSplitter.ICUBidiSplitterFactory());
+        builder.useUnicodeBidiReorderer(new ICUBidiReorderer());
+        builder.defaultTextDirection(TextDirection.LTR);
         builder.withHtmlContent(html, "");
         builder.toStream(outputStream);
         builder.run();
@@ -182,6 +211,8 @@ public class ItineraryReportProvider {
         context.put("generatedAt", formatGeneratedAt(timezone, textLocale));
         if (logoDataUri != null) {
             context.put("logoDataUri", logoDataUri);
+        } else {
+            context.put("brandName", DEFAULT_BRAND_NAME);
         }
         if (stampDataUri != null) {
             context.put("stampDataUri", stampDataUri);
@@ -196,13 +227,20 @@ public class ItineraryReportProvider {
     }
 
     private String loadImageDataUri(String folderId, String name) throws IOException {
-        File file = mediaManager.findFile(folderId, name, "png", "jpg", "jpeg");
+        File file = mediaManager.findFile(folderId, name, ReportImage.EXTENSIONS);
         if (file == null) {
             return null;
         }
-        String mimeType = file.getName().endsWith(".png") ? "image/png" : "image/jpeg";
         byte[] bytes = Files.readAllBytes(file.toPath());
-        return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+        String extension;
+        try {
+            // a broken stored file must not break the whole report
+            extension = ReportImage.validate(bytes);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Ignoring invalid report image {}", file, e);
+            return null;
+        }
+        return "data:" + ReportImage.mimeType(extension) + ";base64," + Base64.getEncoder().encodeToString(bytes);
     }
 
     private ItinerarySummary summarize(List<ItineraryEntry> entries) {

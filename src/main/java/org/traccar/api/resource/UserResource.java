@@ -27,6 +27,8 @@ import org.traccar.model.Device;
 import org.traccar.model.ManagedUser;
 import org.traccar.model.Permission;
 import org.traccar.model.User;
+import org.traccar.model.UserRestrictions;
+import org.traccar.reports.common.ReportImage;
 import org.traccar.storage.StorageException;
 import org.traccar.storage.query.Columns;
 import org.traccar.storage.query.Condition;
@@ -39,7 +41,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -50,8 +51,8 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -60,9 +61,6 @@ import java.util.stream.Stream;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource extends BaseObjectResource<User> {
-
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
-    private static final int IMAGE_SIZE_LIMIT = 500000;
 
     @Inject
     private Config config;
@@ -172,40 +170,59 @@ public class UserResource extends BaseObjectResource<User> {
         return new GoogleAuthenticator().createCredentials().getKey();
     }
 
-    private String imageExtension(String type) {
-        return switch (type) {
-            case "image/jpeg" -> "jpg";
-            case "image/png" -> "png";
-            default -> throw new IllegalArgumentException("Unsupported image type");
-        };
-    }
-
     @Path("{id}/image/{slot:logo|stamp}")
     @POST
     @Consumes("image/*")
     public Response uploadImage(
-            @PathParam("id") long userId, @PathParam("slot") String slot, File file,
-            @HeaderParam(HttpHeaders.CONTENT_TYPE) String type) throws StorageException, IOException {
+            @PathParam("id") long userId, @PathParam("slot") String slot, File file)
+            throws StorageException, IOException {
+
+        permissionsService.checkUser(getUserId(), userId);
+        permissionsService.checkRestriction(getUserId(), UserRestrictions::getReadonly);
+
+        if (file.length() > ReportImage.SIZE_LIMIT) {
+            throw new IllegalArgumentException("Image size limit exceeded");
+        }
+        byte[] data = Files.readAllBytes(file.toPath());
+        String extension = ReportImage.validate(data);
+
+        // replace any previous image, which may have been stored with a different extension
+        String folderId = "user-" + userId;
+        mediaManager.deleteFile(folderId, slot, ReportImage.EXTENSIONS);
+        try (var output = mediaManager.createFileStream(folderId, slot, extension)) {
+            output.write(data);
+        }
+        return Response.ok(slot + "." + extension).build();
+    }
+
+    @Path("{id}/image/{slot:logo|stamp}")
+    @GET
+    @Produces({"image/png", "image/jpeg"})
+    public Response getImage(
+            @PathParam("id") long userId, @PathParam("slot") String slot) throws StorageException, IOException {
 
         permissionsService.checkUser(getUserId(), userId);
 
-        String folderId = "user-" + userId;
-        String extension = imageExtension(type);
-        try (var input = new FileInputStream(file);
-                var output = mediaManager.createFileStream(folderId, slot, extension)) {
-
-            long transferred = 0;
-            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
-            int read;
-            while ((read = input.read(buffer, 0, buffer.length)) >= 0) {
-                output.write(buffer, 0, read);
-                transferred += read;
-                if (transferred > IMAGE_SIZE_LIMIT) {
-                    throw new IllegalArgumentException("Image size limit exceeded");
-                }
-            }
+        File file = mediaManager.findFile("user-" + userId, slot, ReportImage.EXTENSIONS);
+        if (file == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.ok(slot + "." + extension).build();
+        String extension = file.getName().substring(file.getName().lastIndexOf('.') + 1);
+        return Response.ok(Files.readAllBytes(file.toPath()), ReportImage.mimeType(extension))
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache")
+                .build();
+    }
+
+    @Path("{id}/image/{slot:logo|stamp}")
+    @DELETE
+    public Response removeImage(
+            @PathParam("id") long userId, @PathParam("slot") String slot) throws StorageException, IOException {
+
+        permissionsService.checkUser(getUserId(), userId);
+        permissionsService.checkRestriction(getUserId(), UserRestrictions::getReadonly);
+
+        mediaManager.deleteFile("user-" + userId, slot, ReportImage.EXTENSIONS);
+        return Response.noContent().build();
     }
 
 }

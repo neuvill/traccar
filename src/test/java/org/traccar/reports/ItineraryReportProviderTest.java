@@ -1,6 +1,8 @@
 package org.traccar.reports;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,7 @@ import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -33,6 +36,7 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -174,6 +178,73 @@ public class ItineraryReportProviderTest extends BaseTest {
         assertEquals(2, logoOccurrences, "logo should appear once per vehicle page");
         assertEquals(1, stampOccurrences, "stamp should appear only once, on the last page");
         assertTrue(html.contains("data:image/png;base64,"));
+    }
+
+    @Test
+    public void testBrandNameWhenNoLogo() throws Exception {
+        when(storage.getObjectsStream(eq(Position.class), any())).thenAnswer(invocation -> Stream.of(
+                position(1, "2026-10-15 08:19:00.000", 0, 0),
+                position(2, "2026-10-15 08:20:00.000", 0, 0)));
+
+        File brokenLogo = File.createTempFile("logo", ".png");
+        Files.write(brokenLogo.toPath(), "not an image".getBytes(StandardCharsets.UTF_8));
+        brokenLogo.deleteOnExit();
+
+        ItineraryReportProvider provider = new ItineraryReportProvider(
+                config, reportUtils, storage, permissionsService, localeManager, velocityEngine, mediaManager);
+        Date from = date("2026-10-15 00:00:00.000");
+        Date to = date("2026-10-15 23:59:59.000");
+
+        String html = provider.renderHtml(1L, List.of(), List.of(), from, to);
+        assertTrue(html.contains(ItineraryReportProvider.DEFAULT_BRAND_NAME));
+        assertFalse(html.contains("class=\"logo\""));
+
+        // a stored file that isn't a real image falls back to the brand name instead of breaking the report
+        when(mediaManager.findFile(eq("user-1"), eq("logo"), any(String[].class))).thenReturn(brokenLogo);
+        html = provider.renderHtml(1L, List.of(), List.of(), from, to);
+        assertTrue(html.contains(ItineraryReportProvider.DEFAULT_BRAND_NAME));
+        assertFalse(html.contains("class=\"logo\""));
+    }
+
+    @Test
+    public void testHeaderRepeatedOnEveryPage() throws Exception {
+        // 60 short trips separated by long stops, enough to span several pages for one vehicle
+        when(storage.getObjectsStream(eq(Position.class), any())).thenAnswer(invocation -> {
+            List<Position> positions = new ArrayList<>();
+            long id = 1;
+            double distance = 0;
+            for (int i = 0; i < 60; i++) {
+                String hour = String.format("2026-10-15 %02d:%02d", i / 3 + 1, (i % 3) * 20);
+                positions.add(position(id++, hour + ":00.000", 0, distance, "Rue " + i + ", Alger"));
+                positions.add(position(id++, hour + ":01.000", 10, distance, "Rue " + i + ", Alger"));
+                distance += 2000;
+                positions.add(position(id++, hour + ":06.000", 10, distance, "Rue " + (i + 1) + ", Alger"));
+                positions.add(position(id++, hour + ":07.000", 0, distance, "Rue " + (i + 1) + ", Alger"));
+            }
+            return positions.stream();
+        });
+        Device device = storage.getObject(Device.class, null);
+        when(storage.getObjects(eq(Device.class), any())).thenReturn(List.of(device));
+
+        ItineraryReportProvider provider = new ItineraryReportProvider(
+                config, reportUtils, storage, permissionsService, localeManager, velocityEngine, mediaManager);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        provider.getPdf(output, 1L, List.of(), List.of(),
+                date("2026-10-15 00:00:00.000"), date("2026-10-15 23:59:59.000"));
+
+        try (PDDocument document = PDDocument.load(output.toByteArray())) {
+            int pages = document.getNumberOfPages();
+            assertTrue(pages > 1, "test data should span several pages, got " + pages);
+            PDFTextStripper stripper = new PDFTextStripper();
+            for (int page = 1; page <= pages; page++) {
+                stripper.setStartPage(page);
+                stripper.setEndPage(page);
+                String text = stripper.getText(document);
+                assertTrue(text.contains("Trip & Stop Ledger"), "title missing on page " + page);
+                assertTrue(text.contains(ItineraryReportProvider.DEFAULT_BRAND_NAME), "brand missing on page " + page);
+                assertTrue(text.contains("Fourgon 12"), "vehicle missing on page " + page);
+            }
+        }
     }
 
 }
