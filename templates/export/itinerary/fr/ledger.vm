@@ -43,6 +43,12 @@
   .day-table > tbody > tr > td.empty { padding: 12px 6px; color: #8891A0; }
   .day-table > tbody > tr > td.nowrap { white-space: nowrap; }
   .day-table > tbody > tr.closing > td { border-bottom: none; padding: 0; }
+  /* date heading inserted whenever the day changes; kept with the row that follows */
+  .day-table > tbody > tr.day { page-break-after: avoid; }
+  .day-table > tbody > tr.day > td {
+    background: #EEF1F5; color: #1E3A5C; font-weight: bold; font-size: 9px; padding: 4px 6px;
+    border-bottom: 1px solid #C3CAD4;
+  }
   /* each address part and separator is laid out on its own, so mixed Latin/Arabic/Tifinagh parts
      and postcodes keep their logical order instead of being reordered by the bidi algorithm */
   .addr-part { display: inline-block; }
@@ -80,7 +86,7 @@
 </style>
 </head>
 <body>
-#macro(address $parts)#foreach($part in $parts)<span class="addr-unit"><span class="addr-part">$esc.xml($part)</span>#if($foreach.hasNext)<span class="addr-part">,</span>#end</span>#if($foreach.hasNext) #end#end#end
+#macro(address $parts)#if($parts.isEmpty())<span class="dash">—</span>#end#foreach($part in $parts)<span class="addr-unit"><span class="addr-part">$esc.xml($part)</span>#if($foreach.hasNext)<span class="addr-part">,</span>#end</span>#if($foreach.hasNext) #end#end#end
 #foreach($section in $sections)
 <div class="vehicle#if($foreach.count > 1) continued#end">
   <table class="day-table">
@@ -97,6 +103,7 @@
           </td>
         </tr></table>
         <h1>$esc.xml($translations.get("title"))</h1>
+        <p class="masthead-sub">$esc.xml($translations.get("period")) : $esc.xml($period)</p>
         <table class="vehicle-row"><tr>
           <td>
             <div class="label">$esc.xml($translations.get("vehicle"))</div>
@@ -162,7 +169,12 @@
     #if($section.rows.isEmpty())
       <tr><td class="empty" colspan="7">$esc.xml($translations.get("noEntries"))</td></tr>
     #end
+    #set($previousDay = "")
     #foreach($row in $section.rows)
+      #if($row.day != $previousDay)
+      <tr class="day"><td colspan="7">$esc.xml($row.day)</td></tr>
+      #set($previousDay = $row.day)
+      #end
       <tr class="#if($row.trip)trip#{else}stop#end">
         <td class="nowrap">$esc.xml($row.timeRange)</td>
         <td class="nowrap">$esc.xml($row.duration)</td>

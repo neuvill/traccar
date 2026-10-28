@@ -159,6 +159,13 @@ public class ItineraryReportProvider {
 
         DateFormat timeFormat = new SimpleDateFormat("HH:mm");
         timeFormat.setTimeZone(timezone);
+        DateFormat dayFormat = new SimpleDateFormat(
+                "fr".equals(language) ? "EEEE d MMMM yyyy" : "EEEE, MMMM d, yyyy", textLocale);
+        dayFormat.setTimeZone(timezone);
+        // used for the end time when an entry (typically an overnight stop) ends on a later day
+        DateFormat dayTimeFormat = new SimpleDateFormat(
+                "fr".equals(language) ? "dd/MM HH:mm" : "MMM d HH:mm", textLocale);
+        dayTimeFormat.setTimeZone(timezone);
 
         List<ItineraryVehicleSection> sections = new ArrayList<>();
         for (int i = 0; i < devices.size(); i++) {
@@ -190,7 +197,8 @@ public class ItineraryReportProvider {
 
             List<ItineraryRow> rows = new ArrayList<>();
             for (ItineraryEntry entry : entries) {
-                rows.add(buildRow(entry, timeFormat, distanceUnit, speedUnit, numberLocale));
+                rows.add(buildRow(entry, timeFormat, dayFormat, dayTimeFormat, textLocale,
+                        distanceUnit, speedUnit, numberLocale));
             }
             section.setRows(rows);
 
@@ -209,6 +217,7 @@ public class ItineraryReportProvider {
         context.put("translations", translations);
         context.put("sections", sections);
         context.put("generatedAt", formatGeneratedAt(timezone, textLocale));
+        context.put("period", formatPeriod(from, to, timezone, language));
         if (logoDataUri != null) {
             context.put("logoDataUri", logoDataUri);
         } else {
@@ -273,10 +282,15 @@ public class ItineraryReportProvider {
     }
 
     private ItineraryRow buildRow(
-            ItineraryEntry entry, DateFormat timeFormat, String distanceUnit, String speedUnit, Locale locale) {
+            ItineraryEntry entry, DateFormat timeFormat, DateFormat dayFormat, DateFormat dayTimeFormat,
+            Locale textLocale, String distanceUnit, String speedUnit, Locale locale) {
         ItineraryRow row = new ItineraryRow();
         row.setTrip(entry.isTrip());
-        row.setTimeRange(timeFormat.format(entry.getStartTime()) + " – " + timeFormat.format(entry.getEndTime()));
+        String startDay = dayFormat.format(entry.getStartTime());
+        boolean sameDay = startDay.equals(dayFormat.format(entry.getEndTime()));
+        row.setTimeRange(timeFormat.format(entry.getStartTime()) + " – "
+                + (sameDay ? timeFormat : dayTimeFormat).format(entry.getEndTime()));
+        row.setDay(capitalize(startDay, textLocale));
         row.setDuration(formatDuration(entry.getEndTime().getTime() - entry.getStartTime().getTime()));
 
         if (entry.isTrip()) {
@@ -367,6 +381,18 @@ public class ItineraryReportProvider {
             return hours + "h " + minutes + "m";
         }
         return minutes + "m";
+    }
+
+    static String formatPeriod(Date from, Date to, TimeZone timezone, String language) {
+        DateFormat format = "fr".equals(language)
+                ? new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRENCH)
+                : new SimpleDateFormat("MMM d, yyyy HH:mm", Locale.US);
+        format.setTimeZone(timezone);
+        return format.format(from) + " – " + format.format(to);
+    }
+
+    private static String capitalize(String text, Locale locale) {
+        return text.isEmpty() ? text : text.substring(0, 1).toUpperCase(locale) + text.substring(1);
     }
 
     private static String formatGeneratedAt(TimeZone timezone, Locale locale) {

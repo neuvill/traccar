@@ -247,4 +247,43 @@ public class ItineraryReportProviderTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testPeriodAndDayHeadings() throws Exception {
+        // keep the two-day period on the regular (non-fast) detection, which reads the mocked positions
+        when(config.getLong(Keys.REPORT_FAST_THRESHOLD)).thenReturn(7 * 86400L);
+        // trips on two different days
+        when(storage.getObjectsStream(eq(Position.class), any())).thenAnswer(invocation -> Stream.of(
+                position(1, "2026-10-15 08:19:00.000", 0, 0),
+                position(2, "2026-10-15 08:20:00.000", 0, 0),
+                position(3, "2026-10-15 08:21:00.000", 10, 0),
+                position(4, "2026-10-15 09:38:00.000", 10, 16060),
+                position(5, "2026-10-15 09:39:00.000", 0, 16060),
+                position(6, "2026-10-16 07:00:00.000", 0, 16060),
+                position(7, "2026-10-16 07:01:00.000", 10, 16060),
+                position(8, "2026-10-16 08:00:00.000", 10, 26060),
+                position(9, "2026-10-16 08:01:00.000", 0, 26060)));
+        Device device = storage.getObject(Device.class, null);
+        when(storage.getObjects(eq(Device.class), any())).thenReturn(List.of(device));
+
+        User user = new User();
+        user.set("language", "fr");
+        user.set("timezone", "UTC");
+        when(permissionsService.getUser(1L)).thenReturn(user);
+
+        ItineraryReportProvider provider = new ItineraryReportProvider(
+                config, reportUtils, storage, permissionsService, localeManager, velocityEngine, mediaManager);
+        String html = provider.renderHtml(1L, List.of(), List.of(),
+                date("2026-10-15 00:00:00.000"), date("2026-10-16 23:59:00.000"));
+
+        assertTrue(html.contains("Période : 15/10/2026 00:00 – 16/10/2026 23:59"), "period missing");
+        assertTrue(html.contains("Jeudi 15 octobre 2026"), "first day heading missing");
+        assertTrue(html.contains("Vendredi 16 octobre 2026"), "second day heading missing");
+        assertEquals(2, html.split("class=\"day\"", -1).length - 1, "one heading per day");
+        assertTrue(html.contains("09:39 – 16/10 07:01"), "overnight stop should show the end date");
+        assertTrue(html.contains("07:01 – 08:01"), "same-day entry should show times only");
+
+        assertEquals("Oct 15, 2026 00:00 – Oct 16, 2026 23:59", ItineraryReportProvider.formatPeriod(
+                date("2026-10-15 00:00:00.000"), date("2026-10-16 23:59:00.000"), TimeZone.getTimeZone("UTC"), "en"));
+    }
+
 }

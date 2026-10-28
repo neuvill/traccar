@@ -7,6 +7,7 @@ public class ItineraryRow {
 
     private boolean trip;
     private String timeRange;
+    private String day;
     private String duration;
     private String fromAddress;
     private String toAddress;
@@ -21,6 +22,15 @@ public class ItineraryRow {
 
     public void setTrip(boolean trip) {
         this.trip = trip;
+    }
+
+    /** Localized date of the entry start, used for the day heading rows in the PDF. */
+    public String getDay() {
+        return day;
+    }
+
+    public void setDay(String day) {
+        this.day = day;
     }
 
     public String getTimeRange() {
