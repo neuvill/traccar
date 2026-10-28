@@ -48,6 +48,7 @@ import org.traccar.storage.query.Request;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.ArrayDeque;
 import java.util.Date;
 import java.util.Deque;
 import java.util.HashSet;
@@ -75,6 +76,12 @@ public class CacheManager implements BroadcastInterface {
     private volatile Server server;
     private final Map<Long, ConcurrentLinkedDeque<Position>> devicePositions = new ConcurrentHashMap<>();
     private final Map<Long, HashSet<Object>> deviceReferences = new ConcurrentHashMap<>();
+
+    /**
+     * Reference held on a device because another cached device links to it.
+     */
+    private record DeviceLinkKey(long deviceId) {
+    }
 
     @Inject
     public CacheManager(Config config, Storage storage, BroadcastService broadcastService) throws StorageException {
@@ -134,52 +141,89 @@ public class CacheManager implements BroadcastInterface {
 
     public synchronized void addDevice(long deviceId, Object key) throws Exception {
         var references = deviceReferences.computeIfAbsent(deviceId, k -> new HashSet<>());
-        if (references.isEmpty()) {
-            Device device = storage.getObject(Device.class, new Request(
-                    new Columns.All(), new Condition.Equals("id", deviceId)));
-            graph.addObject(device);
-            initializeCache(device);
-            if (device.getPositionId() > 0) {
-                Position position = storage.getObject(Position.class, new Request(
-                        new Columns.All(),
-                        new Condition.And(
-                                new Condition.Equals("deviceId", deviceId),
-                                new Condition.Equals("id", device.getPositionId()))));
-                if (position != null) {
-                    var positions = devicePositions.computeIfAbsent(deviceId, k -> new ConcurrentLinkedDeque<>());
-                    if (config.getBoolean(Keys.REPORT_TRIP_NEW_LOGIC)) {
-                        long minDuration = AttributeUtil.lookup(this, Keys.REPORT_TRIP_MIN_DURATION, deviceId) * 1000;
-                        var from = new Date(position.getFixTime().getTime() - minDuration);
-                        var to = position.getFixTime();
-                        try (var positionsStream =
-                                PositionUtil.getPositionsStreamWithExtra(storage, deviceId, from, to)) {
-                            positionsStream.forEach(loaded -> appendPosition(positions, loaded));
-                        }
-                    } else {
-                        positions.add(position);
+        boolean load = references.isEmpty();
+        // register before loading, so links leading back to this device (self-links or cycles) find it
+        // already cached instead of loading it again recursively
+        references.add(key);
+        if (load) {
+            try {
+                loadDevice(deviceId);
+            } catch (Exception e) {
+                removeDevice(deviceId, key);
+                throw e;
+            }
+        }
+        LOGGER.debug("Cache add device {} references {} key {}", deviceId, references.size(), key);
+    }
+
+    private void loadDevice(long deviceId) throws Exception {
+        Device device = storage.getObject(Device.class, new Request(
+                new Columns.All(), new Condition.Equals("id", deviceId)));
+        graph.addObject(device);
+        initializeCache(device);
+        if (device.getPositionId() > 0) {
+            Position position = storage.getObject(Position.class, new Request(
+                    new Columns.All(),
+                    new Condition.And(
+                            new Condition.Equals("deviceId", deviceId),
+                            new Condition.Equals("id", device.getPositionId()))));
+            if (position != null) {
+                var positions = devicePositions.computeIfAbsent(deviceId, k -> new ConcurrentLinkedDeque<>());
+                if (config.getBoolean(Keys.REPORT_TRIP_NEW_LOGIC)) {
+                    long minDuration = AttributeUtil.lookup(this, Keys.REPORT_TRIP_MIN_DURATION, deviceId) * 1000;
+                    var from = new Date(position.getFixTime().getTime() - minDuration);
+                    var to = position.getFixTime();
+                    try (var positionsStream =
+                            PositionUtil.getPositionsStreamWithExtra(storage, deviceId, from, to)) {
+                        positionsStream.forEach(loaded -> appendPosition(positions, loaded));
                     }
+                } else {
+                    positions.add(position);
                 }
             }
         }
-        references.add(key);
-        LOGGER.debug("Cache add device {} references {} key {}", deviceId, references.size(), key);
     }
 
     public synchronized void removeDevice(long deviceId, Object key) {
         var references = deviceReferences.computeIfAbsent(deviceId, k -> new HashSet<>());
         references.remove(key);
-        if (references.isEmpty()) {
-            removeLinkedDevices(deviceId);
-            graph.removeObject(Device.class, deviceId);
-            devicePositions.remove(deviceId);
-            deviceReferences.remove(deviceId);
-        }
         LOGGER.debug("Cache remove device {} references {} key {}", deviceId, references.size(), key);
+        // links from other devices only keep a device cached while one of them is still referenced
+        // from outside the links, so devices linked in a cycle are released too
+        if (!hasExternalReference(deviceId)) {
+            deviceReferences.remove(deviceId);
+            devicePositions.remove(deviceId);
+            var linkedDevices = getDeviceObjects(deviceId, Device.class);
+            graph.removeObject(Device.class, deviceId);
+            for (Device linkedDevice : linkedDevices) {
+                removeDevice(linkedDevice.getId(), new DeviceLinkKey(deviceId));
+            }
+        }
+    }
+
+    private boolean hasExternalReference(long deviceId) {
+        Set<Long> visited = new HashSet<>();
+        Deque<Long> pending = new ArrayDeque<>();
+        pending.add(deviceId);
+        while (!pending.isEmpty()) {
+            long id = pending.poll();
+            var references = deviceReferences.get(id);
+            if (visited.add(id) && references != null) {
+                for (Object reference : references) {
+                    if (reference instanceof DeviceLinkKey link) {
+                        pending.add(link.deviceId());
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void removeLinkedDevices(long deviceId) {
         for (Device linkedDevice : getDeviceObjects(deviceId, Device.class)) {
-            removeDevice(linkedDevice.getId(), deviceId);
+            removeDevice(linkedDevice.getId(), new DeviceLinkKey(deviceId));
         }
     }
 
@@ -329,7 +373,7 @@ public class CacheManager implements BroadcastInterface {
                 && graph.getObject(fromClass, fromId) != null;
         if (link) {
             if (cachedDeviceLink) {
-                addDevice(toId, fromId);
+                addDevice(toId, new DeviceLinkKey(fromId));
             }
             if (!graph.addLink(fromClass, fromId, toClass, toId, createObjectSupplier(toClass, toId))) {
                 initializeCache(graph.getObject(toClass, toId));
@@ -337,7 +381,7 @@ public class CacheManager implements BroadcastInterface {
         } else {
             graph.removeLink(fromClass, fromId, toClass, toId);
             if (cachedDeviceLink) {
-                removeDevice(toId, fromId);
+                removeDevice(toId, new DeviceLinkKey(fromId));
             }
         }
     }

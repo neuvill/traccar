@@ -16,6 +16,7 @@
 package org.traccar.storage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.config.Config;
@@ -53,6 +54,7 @@ public final class QueryBuilder implements AutoCloseable {
 
     private final Config config;
     private final ObjectMapper objectMapper;
+    private final DataSource dataSource;
 
     private final Connection connection;
     private final PreparedStatement statement;
@@ -66,6 +68,7 @@ public final class QueryBuilder implements AutoCloseable {
             String query, boolean returnGeneratedKeys) throws SQLException {
         this.config = config;
         this.objectMapper = objectMapper;
+        this.dataSource = dataSource;
         this.query = query;
         this.returnGeneratedKeys = returnGeneratedKeys;
         connection = dataSource.getConnection();
@@ -308,7 +311,8 @@ public final class QueryBuilder implements AutoCloseable {
                             throw new RuntimeException(e);
                         }
                     });
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // also clean up on errors, so the connection never goes back to the pool mid-stream
             if (resultSet != null) {
                 try {
                     resultSet.close();
@@ -323,16 +327,23 @@ public final class QueryBuilder implements AutoCloseable {
 
     @Override
     public void close() throws SQLException {
+        boolean reusable = false;
         try {
-            statement.close();
-        } finally {
             try {
+                statement.close();
+            } finally {
                 if (streamingTransaction) {
                     streamingTransaction = false;
                     connection.rollback();
                     connection.setAutoCommit(true);
                 }
-            } finally {
+            }
+            reusable = true;
+        } finally {
+            if (!reusable && dataSource instanceof HikariDataSource pool) {
+                // state is unknown (for example an unfinished streaming result set), so don't reuse it
+                pool.evictConnection(connection);
+            } else {
                 connection.close();
             }
         }
